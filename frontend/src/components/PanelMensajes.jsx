@@ -7,16 +7,16 @@ const PanelMensajes = () => {
   );
 
   const [mensajes, setMensajes] = useState([
-    "Disponible para consultas",
-    "En reunión, vuelvo pronto",
-    "Vuelvo en 5 minutos",
+    { texto: "Disponible para consultas", activo: false },
+    { texto: "En reunión, vuelvo pronto", activo: false },
+    { texto: "Vuelvo en 5 minutos", activo: false },
   ]);
 
   const [nuevoMensaje, setNuevoMensaje] = useState("");
 
   const añadirMensaje = () => {
     if (nuevoMensaje.trim()) {
-      setMensajes([...mensajes, nuevoMensaje]);
+      setMensajes([...mensajes, { texto: nuevoMensaje, activo: false }]);
       setNuevoMensaje("");
     }
   };
@@ -25,6 +25,15 @@ const PanelMensajes = () => {
     const copia = [...mensajes];
     copia.splice(index, 1);
     setMensajes(copia);
+  };
+
+  const activarMensaje = (index) => {
+    const actualizados = mensajes.map((m, i) => ({
+      ...m,
+      activo: i === index,
+    }));
+    setMensajes(actualizados);
+    setMensajeDefecto(mensajes[index].texto); // Copia al mensaje por defecto
   };
 
   return (
@@ -57,13 +66,22 @@ const PanelMensajes = () => {
           {mensajes.map((msg, index) => (
             <div
               key={index}
-              className="flex items-center justify-between border rounded-md px-3 py-2 text-sm"
+              className={`flex items-center justify-between border rounded-md px-3 py-2 text-sm ${
+                msg.activo ? "bg-red-50 border-red-600" : ""
+              }`}
             >
-              <span>{msg}</span>
+              <span>{msg.texto}</span>
               <div className="flex gap-2">
-                <button className="text-sm text-white bg-gray-800 px-2 py-1 rounded hover:bg-black">
-                  Activar
-                </button>
+                {msg.activo ? (
+                  <span className="text-xs text-green-700 font-medium">Activo ✅</span>
+                ) : (
+                  <button
+                    className="text-sm text-white bg-gray-800 px-2 py-1 rounded hover:bg-black"
+                    onClick={() => activarMensaje(index)}
+                  >
+                    Activar
+                  </button>
+                )}
                 <Pencil size={16} className="cursor-pointer text-gray-600 hover:text-black" />
                 <Trash2
                   size={16}
