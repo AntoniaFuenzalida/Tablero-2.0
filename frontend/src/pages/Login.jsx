@@ -1,84 +1,51 @@
-import React, { useState } from "react";
-import Input from "../components/Input";
-import Button from "../components/Button";
+import React from "react";
 import { Link } from "react-router-dom";
+import logoUtalca from "../assets/logo-utalca.png";
 
 const Login = () => {
-  const [form, setForm] = useState({ email: "", password: "" });
-
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Login con:", form);
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center px-4 py-10">
-      {/* Título principal */}
-      <h1 className="text-2xl font-bold text-red-700 mb-6 text-center">
-        Sistema Tablero 2.0 Utalca
-      </h1>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+        <div className="flex flex-col items-center mb-6">
+          <img src={logoUtalca} alt="Logo Utalca" className="h-12 mb-2" />
+          <h2 className="text-xl font-semibold text-red-700">Iniciar Sesión</h2>
+        </div>
 
-      {/* Formulario */}
-      <div className="bg-white border border-red-700 rounded-lg p-6 w-full max-w-md shadow-sm mb-6">
-        <h2 className="text-xl font-semibold text-red-700 mb-1">Iniciar Sesión</h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Ingrese sus credenciales para acceder al sistema
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Correo Electrónico"
-            name="email"
-            type="email"
-            value={form.email}
-            onChange={handleChange}
-            placeholder="correo@ejemplo.com"
-          />
-          <div className="relative">
-            <Input
-              label="Contraseña"
-              name="password"
-              type="password"
-              value={form.password}
-              onChange={handleChange}
-              placeholder="********"
+        <form className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Correo electrónico</label>
+            <input
+              type="email"
+              className="w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="ejemplo@utalca.cl"
+              required
             />
-            <span className="absolute right-0 top-6 text-xs text-red-600 cursor-pointer">
-              ¿Olvidó su contraseña?
-            </span>
           </div>
 
-          <Button type="submit" className="bg-red-600 text-white hover:bg-red-700">
-            Iniciar Sesión
-          </Button>
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Contraseña</label>
+            <input
+              type="password"
+              className="w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700 transition"
+          >
+            Entrar
+          </button>
         </form>
 
         <p className="text-sm text-center text-gray-600 mt-4">
-          ¿No tiene una cuenta?{" "}
-          <Link to="/registro" className="text-red-600 underline">
-            Registrarse
+          ¿No tienes cuenta?{" "}
+          <Link to="/registro" className="text-red-600 hover:underline">
+            Regístrate aquí
           </Link>
         </p>
-      </div>
-
-      {/* Credenciales demo */}
-      <div className="bg-white rounded-lg shadow-sm p-4 w-full max-w-md text-sm text-gray-800 text-center">
-        <h3 className="font-semibold mb-3">Credenciales de demostración:</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="border rounded-md p-2">
-            <p className="font-semibold text-red-700">Docente</p>
-            <p>Email: docente@ejemplo.com</p>
-            <p>Contraseña: password</p>
-          </div>
-          <div className="border rounded-md p-2">
-            <p className="font-semibold text-gray-800">Administrador</p>
-            <p>Email: admin@ejemplo.com</p>
-            <p>Contraseña: password</p>
-          </div>
-        </div>
       </div>
     </div>
   );

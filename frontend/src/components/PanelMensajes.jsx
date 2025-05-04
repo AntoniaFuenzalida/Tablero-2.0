@@ -1,115 +1,109 @@
 import React, { useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { CheckCircle, Edit2, Trash2, Plus } from "lucide-react";
 
 const PanelMensajes = () => {
-  const [mensajeDefecto, setMensajeDefecto] = useState(
-    "No disponible en este momento. Horario de atención: Lunes a Viernes de 10:00 a 12:00"
-  );
+  const [mensajeDefault, setMensajeDefault] = useState("No me encuentro disponible, por favor vuelva más tarde.");
+  const [editandoDefault, setEditandoDefault] = useState(false);
 
-  const [mensajes, setMensajes] = useState([
-    { texto: "Disponible para consultas", activo: false },
-    { texto: "En reunión, vuelvo pronto", activo: false },
-    { texto: "Vuelvo en 5 minutos", activo: false },
+  const [mensajesPersonalizados, setMensajesPersonalizados] = useState([
+    "En reunión, regreso a las 12:00.",
+    "Estoy en clase, disponible después de las 16:00.",
+    "Fuera de oficina, respondo correos mañana.",
   ]);
 
   const [nuevoMensaje, setNuevoMensaje] = useState("");
 
-  const añadirMensaje = () => {
-    if (nuevoMensaje.trim()) {
-      setMensajes([...mensajes, { texto: nuevoMensaje, activo: false }]);
-      setNuevoMensaje("");
-    }
+  const handleEditarMensaje = (index, nuevoTexto) => {
+    const actualizados = [...mensajesPersonalizados];
+    actualizados[index] = nuevoTexto;
+    setMensajesPersonalizados(actualizados);
   };
 
-  const eliminarMensaje = (index) => {
-    const copia = [...mensajes];
-    copia.splice(index, 1);
-    setMensajes(copia);
+  const handleEliminar = (index) => {
+    const actualizados = [...mensajesPersonalizados];
+    actualizados.splice(index, 1);
+    setMensajesPersonalizados(actualizados);
   };
 
-  const activarMensaje = (index) => {
-    const actualizados = mensajes.map((m, i) => ({
-      ...m,
-      activo: i === index,
-    }));
-    setMensajes(actualizados);
-    setMensajeDefecto(mensajes[index].texto); // Copia al mensaje por defecto
+  const agregarMensaje = () => {
+    if (nuevoMensaje.trim() === "") return;
+    setMensajesPersonalizados([...mensajesPersonalizados, nuevoMensaje.trim()]);
+    setNuevoMensaje("");
   };
 
   return (
-    <section className="flex-1 space-y-6">
+    <div className="space-y-8">
       {/* Mensaje por defecto */}
-      <div className="border border-red-700 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-red-700">Mensaje por Defecto</h3>
-        <p className="text-sm text-gray-500 mb-3">
-          Este mensaje se mostrará cuando no estés disponible
-        </p>
-        <textarea
-          className="w-full border rounded-md p-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-red-600"
-          rows={3}
-          value={mensajeDefecto}
-          onChange={(e) => setMensajeDefecto(e.target.value)}
-        />
-        <button className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition">
-          Guardar Mensaje
-        </button>
+      <div className="bg-white p-6 rounded-lg shadow-md border border-red-100">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-bold text-red-700 flex items-center gap-2">
+            <CheckCircle size={20} className="text-green-600" />
+            Mensaje Actual
+          </h3>
+          <button
+            onClick={() => setEditandoDefault(!editandoDefault)}
+            className="flex items-center text-sm text-gray-600 hover:text-red-700"
+          >
+            <Edit2 size={16} className="mr-1" />
+            {editandoDefault ? "Guardar" : "Editar"}
+          </button>
+        </div>
+        {editandoDefault ? (
+          <textarea
+            value={mensajeDefault}
+            onChange={(e) => setMensajeDefault(e.target.value)}
+            className="w-full border border-gray-300 p-2 rounded-md text-sm resize-none"
+            rows={3}
+          />
+        ) : (
+          <p className="text-gray-700 text-sm">{mensajeDefault}</p>
+        )}
       </div>
 
-      {/* Mensajes personalizados */}
-      <div className="border border-red-700 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-red-700">Mensajes Personalizados</h3>
-        <p className="text-sm text-gray-500 mb-4">
-          Configure mensajes predefinidos para diferentes situaciones
-        </p>
-
-        <div className="space-y-2 mb-4">
-          {mensajes.map((msg, index) => (
-            <div
+      {/* Mensajes Personalizados */}
+      <div className="bg-white p-6 rounded-lg shadow-md border">
+        <h3 className="text-lg font-bold text-gray-800 mb-3">Mensajes Personalizados</h3>
+        <ul className="space-y-3">
+          {mensajesPersonalizados.map((mensaje, index) => (
+            <li
               key={index}
-              className={`flex items-center justify-between border rounded-md px-3 py-2 text-sm ${
-                msg.activo ? "bg-red-50 border-red-600" : ""
-              }`}
+              className="flex items-center justify-between bg-gray-50 border border-gray-200 px-4 py-2 rounded-md text-sm"
             >
-              <span>{msg.texto}</span>
-              <div className="flex gap-2">
-                {msg.activo ? (
-                  <span className="text-xs text-green-700 font-medium">Activo ✅</span>
-                ) : (
-                  <button
-                    className="text-sm text-white bg-gray-800 px-2 py-1 rounded hover:bg-black"
-                    onClick={() => activarMensaje(index)}
-                  >
-                    Activar
-                  </button>
-                )}
-                <Pencil size={16} className="cursor-pointer text-gray-600 hover:text-black" />
-                <Trash2
-                  size={16}
-                  className="cursor-pointer text-gray-600 hover:text-red-600"
-                  onClick={() => eliminarMensaje(index)}
-                />
-              </div>
-            </div>
+              <input
+                type="text"
+                value={mensaje}
+                onChange={(e) => handleEditarMensaje(index, e.target.value)}
+                className="flex-1 bg-transparent border-none focus:outline-none text-gray-700"
+              />
+              <button
+                onClick={() => handleEliminar(index)}
+                className="text-red-600 hover:text-red-800 ml-3"
+                title="Eliminar mensaje"
+              >
+                <Trash2 size={18} />
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
 
-        <div className="flex gap-2">
+        {/* Agregar nuevo mensaje */}
+        <div className="flex mt-4 gap-2">
           <input
             type="text"
-            placeholder="Escriba un nuevo mensaje personalizado"
-            className="flex-1 border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-600"
             value={nuevoMensaje}
             onChange={(e) => setNuevoMensaje(e.target.value)}
+            placeholder="Nuevo mensaje..."
+            className="flex-1 px-3 py-2 border rounded-md text-sm"
           />
           <button
-            onClick={añadirMensaje}
+            onClick={agregarMensaje}
             className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition"
           >
-            Añadir
+            <Plus size={18} />
           </button>
         </div>
       </div>
-    </section>
+    </div>
   );
 };
 
