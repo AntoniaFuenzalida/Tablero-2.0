@@ -6,8 +6,6 @@ const diasSemana = [
   "Miércoles",
   "Jueves",
   "Viernes",
-  "Sábado",
-  "Domingo",
 ];
 
 const HorarioAtencion = () => {
