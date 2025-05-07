@@ -1,0 +1,54 @@
+import React from "react";
+import { Link } from "react-router-dom";
+import logoUtalca from "../assets/logo-utalca.png";
+
+const Login = () => {
+  return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+        <div className="flex flex-col items-center mb-6">
+          <img src={logoUtalca} alt="Logo Utalca" className="h-12 mb-2" />
+          <h2 className="text-xl font-semibold text-red-700">Iniciar Sesión</h2>
+        </div>
+
+        <form className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Correo electrónico</label>
+            <input
+              type="email"
+              className="w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="ejemplo@utalca.cl"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Contraseña</label>
+            <input
+              type="password"
+              className="w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700 transition"
+          >
+            Entrar
+          </button>
+        </form>
+
+        <p className="text-sm text-center text-gray-600 mt-4">
+          ¿No tienes cuenta?{" "}
+          <Link to="/registro" className="text-red-600 hover:underline">
+            Regístrate aquí
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default Login;
