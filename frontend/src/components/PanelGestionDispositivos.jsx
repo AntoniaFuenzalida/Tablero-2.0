@@ -27,6 +27,8 @@ const PanelGestionDispositivos = () => {
   ]);
 
   const [showModal, setShowModal] = useState(false);
+  const [showEliminarModal, setShowEliminarModal] = useState(false);
+  const [dispositivoAEliminar, setDispositivoAEliminar] = useState(null);
   const [nuevoDispositivo, setNuevoDispositivo] = useState({
     id: "",
     ubicacion: "",
@@ -45,6 +47,12 @@ const PanelGestionDispositivos = () => {
     ]);
     setNuevoDispositivo({ id: "", ubicacion: "", docente: "" });
     setShowModal(false);
+  };
+
+  const eliminarDispositivo = () => {
+    setDispositivos(dispositivos.filter((d) => d.id !== dispositivoAEliminar));
+    setDispositivoAEliminar(null);
+    setShowEliminarModal(false);
   };
 
   return (
@@ -90,13 +98,21 @@ const PanelGestionDispositivos = () => {
               </td>
               <td className="px-4 py-2">{d.docente}</td>
               <td className="px-4 py-2">{d.ultimaConexion}</td>
-              <td className="px-4 py-2 text-red-600 hover:underline cursor-pointer">Detalles</td>
+              <td
+                className="px-4 py-2 text-red-600 hover:underline cursor-pointer"
+                onClick={() => {
+                  setDispositivoAEliminar(d.id);
+                  setShowEliminarModal(true);
+                }}
+              >
+                Eliminar Conexión
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      {/* Modal simple */}
+      {/* Modal de asignar dispositivo */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
@@ -154,6 +170,30 @@ const PanelGestionDispositivos = () => {
                 onClick={agregarDispositivo}
               >
                 Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación de eliminación */}
+      {showEliminarModal && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg">
+            <h3 className="text-lg font-semibold mb-4 text-red-600">Confirmar eliminación</h3>
+            <p className="mb-6">¿Está seguro que desea eliminar la conexión del dispositivo <strong>{dispositivoAEliminar}</strong>?</p>
+            <div className="flex justify-end gap-3">
+              <button
+                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+                onClick={() => setShowEliminarModal(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+                onClick={eliminarDispositivo}
+              >
+                Eliminar
               </button>
             </div>
           </div>
