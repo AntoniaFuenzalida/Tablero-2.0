@@ -1,24 +1,21 @@
-import logo from './cat.png';
-import './App.css';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Landing from "./pages/Landing";
+import Login from "./pages/Login";
+import Registro from "./pages/Registro";
+import MainDocente from "./pages/MainDocente";
+import MainAdmin from "./pages/MainAdmin";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Esto es una prueba de entorno
-        </p>
-        <a
-          className="App-link"
-          href="https://www.youtube.com/watch?v=42CVIuY6nFo"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Miau
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/registro" element={<Registro />} />
+        <Route path="/docente" element={<MainDocente />} />
+        <Route path="/admin" element={<MainAdmin />} />
+      </Routes>
+    </Router>
   );
 }
 
