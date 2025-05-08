@@ -1,6 +1,6 @@
 const db = require('../db');
 const bcrypt = require('bcrypt');
-
+const jwt = require('jsonwebtoken');
 
 const getUsers = async (req, res) => {
   try {
@@ -37,33 +37,35 @@ const registerUser = async (req, res) => {
     }
   };
 
-const loginUser = async (req, res) => {
-  const { correo, contraseña } = req.body;
-
-  if (!correo || !contraseña)
-    return res.status(400).json({ error: 'Email y contraseña son requeridos' });
-
-  try {
-    const [users] = await db.query('SELECT * FROM Usuario WHERE email = ?', [email]);
-    if (users.length === 0)
-      return res.status(401).json({ error: 'Usuario no encontrado' });
-
-    const user = users[0];
-    const isMatch = await bcrypt.compare(contraseña, user.contraseña);
-
-    if (!isMatch)
-      return res.status(401).json({ error: 'Contraseña incorrecta' });
-
-    const token = jwt.sign(
-      { id: user.id, name: user.nombre, email: user.correo },
-      { expiresIn: '1h' }
-    );
-
-    res.json({ message: 'Login exitoso', token });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-};
+  const loginUser = async (req, res) => {
+    const { correo, contraseña } = req.body;
+  
+    if (!correo || !contraseña)
+      return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+  
+    try {
+      const [users] = await db.query('SELECT * FROM Usuario WHERE correo = ?', [correo]);
+      if (users.length === 0)
+        return res.status(401).json({ error: 'Usuario no encontrado' });
+  
+      const user = users[0];
+      const isMatch = await bcrypt.compare(contraseña, user.contraseña);
+  
+      if (!isMatch)
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+  
+      const token = jwt.sign(
+        { id: user.id, nombre: user.nombre, correo: user.correo },
+        process.env.JWT_SECRET || "claveSecreta",
+        { expiresIn: '1h' }
+      );
+  
+      res.json({ message: 'Login exitoso', token });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  };
+  
 
 module.exports = { registerUser, getUsers , loginUser };
