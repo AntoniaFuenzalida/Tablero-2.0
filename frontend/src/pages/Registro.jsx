@@ -4,6 +4,11 @@ import logoUtalca from "../assets/logo-utalca.png";
 
 const Registro = () => {
   const [rol, setRol] = useState("docente");
+  const [nombre, setNombre] = useState("");
+  const [correo, setCorreo] = useState("");
+  const [contraseña, setContraseña] = useState("");
+  const [confirmarContraseña, setConfirmarContraseña] = useState("");
+
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
@@ -13,11 +18,43 @@ const Registro = () => {
           <h2 className="text-xl font-semibold text-red-700">Registro de Usuario</h2>
         </div>
 
-        <form className="space-y-4">
+        <form //Manejador del formulario de registro y controlador cuando se crea la cuenta
+          className="space-y-4"
+          onSubmit={async (e) => {
+            e.preventDefault();
+
+            if (contraseña !== confirmarContraseña) {
+              alert("Las contraseñas no coinciden");
+              return;
+            }
+
+            try {
+              const response = await fetch("http://localhost:3001/api/register", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ nombre, correo, contraseña, rol }),
+              });
+
+              const data = await response.json();
+              if (response.ok) {
+                alert("Usuario registrado exitosamente");
+                // Opcional: redirigir a login
+              } else {
+                alert(data.error || "Error al registrar");
+              }
+            } catch (error) {
+              alert("Error de conexión con el servidor");
+            }
+          }}
+        >
           <div>
             <label className="block text-sm text-gray-700 mb-1">Nombre completo</label>
             <input
               type="text"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
               className="w-full border px-3 py-2 rounded text-sm"
               placeholder="Juan Pérez"
               required
@@ -28,6 +65,8 @@ const Registro = () => {
             <label className="block text-sm text-gray-700 mb-1">Correo electrónico</label>
             <input
               type="email"
+              value={correo}
+              onChange={(e) => setCorreo(e.target.value)}
               className="w-full border px-3 py-2 rounded text-sm"
               placeholder="ejemplo@utalca.cl"
               required
@@ -39,6 +78,8 @@ const Registro = () => {
               <label className="block text-sm text-gray-700 mb-1">Contraseña</label>
               <input
                 type="password"
+                value={contraseña}
+                onChange={(e) => setContraseña(e.target.value)}
                 className="w-full border px-3 py-2 rounded text-sm"
                 required
               />
@@ -48,6 +89,8 @@ const Registro = () => {
               <label className="block text-sm text-gray-700 mb-1">Confirmar contraseña</label>
               <input
                 type="password"
+                value={confirmarContraseña}
+                onChange={(e) => setConfirmarContraseña(e.target.value)}
                 className="w-full border px-3 py-2 rounded text-sm"
                 required
               />
