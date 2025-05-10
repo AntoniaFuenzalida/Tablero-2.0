@@ -12,27 +12,20 @@ const PaginaPrueba = () => {
   useEffect(() => {
     // Establece la conexión con el broker MQTT
     const brokerUrl = 'ws://192.168.183.156:9001'; // Cambia esto por la URL de tu broker MQTT
-    console.log(`[DEBUG] Intentando conectar a broker MQTT: ${brokerUrl}`);
     
     const mqttClient = mqtt.connect(brokerUrl);
     
     mqttClient.on('connect', () => {
       console.log(`[DEBUG] Conectado exitosamente al broker MQTT: ${brokerUrl}`);
       setConnectionStatus('Conectado');
-      
-      // Suscribirse a un tema para recibir mensajes
-      mqttClient.subscribe(mqttTopic, (err) => {
-        if (!err) {
-          console.log(`[DEBUG] Suscrito exitosamente al tema: ${mqttTopic}`);
-        } else {
-          console.error(`[DEBUG] Error al suscribirse al tema ${mqttTopic}:`, err);
-        }
+      // Suscribirse a un topico para recibir mensajes
+      mqttClient.subscribe(mqttTopic, (err) => { 
       });
     });
 
     mqttClient.on('message', (topic, message) => {
       const msg = message.toString();
-      console.log(`[DEBUG] Mensaje recibido en tema ${topic}: "${msg}"`);
+      console.log(`[DEBUG] Mensaje recibido en topico ${topic}: "${msg}"`);
       setLastMessage({ topic, message: msg, timestamp: new Date().toLocaleTimeString() });
     });
 
@@ -62,20 +55,20 @@ const PaginaPrueba = () => {
     };
   }, [mqttTopic]);
 
-  // Actualizar suscripción cuando cambie el tema
+  // Actualizar suscripción cuando cambie el topico
   useEffect(() => {
     if (client && client.connected) {
-      // Primero desuscribirse del tema anterior
+      // Primero se desuscribe del topico anterior
       client.unsubscribe(mqttTopic, (err) => {
         if (!err) {
-          console.log(`[DEBUG] Desuscrito del tema anterior`);
+          console.log(`[DEBUG] Desuscrito del topico anterior`);
           
-          // Luego suscribirse al nuevo tema
+          // Luego suscribirse al nuevo topico
           client.subscribe(mqttTopic, (err) => {
             if (!err) {
-              console.log(`[DEBUG] Suscrito al nuevo tema: ${mqttTopic}`);
+              console.log(`[DEBUG] Suscrito al nuevo topico: ${mqttTopic}`);
             } else {
-              console.error(`[DEBUG] Error al suscribirse al tema ${mqttTopic}:`, err);
+              console.error(`[DEBUG] Error al suscribirse al topico ${mqttTopic}:`, err);
             }
           });
         }
@@ -87,17 +80,14 @@ const PaginaPrueba = () => {
     e.preventDefault();
     
     if (client && client.connected) {
-      console.log(`[DEBUG] Intentando publicar mensaje en tema: ${mqttTopic}`);
       console.log(`[DEBUG] Contenido del mensaje: "${texto}"`);
       
-      // Publicar el mensaje al tema MQTT
+      // Publicar el mensaje al topico MQTT
       client.publish(mqttTopic, texto, { qos: 0, retain: false }, (err) => {
         if (!err) {
-          console.log(`[DEBUG] Mensaje publicado exitosamente`);
           // Opcionalmente, limpiar el campo después de enviar
           setTexto('');
         } else {
-          console.error(`[DEBUG] Error al publicar mensaje:`, err);
           alert(`Error al enviar mensaje: ${err.message}`);
         }
       });
@@ -119,11 +109,11 @@ const PaginaPrueba = () => {
         <div style={styles.cardBody}>
           <form onSubmit={handleSubmit}>
             <div style={styles.formGroup}>
-              <label style={styles.label}>Tema MQTT</label>
+              <label style={styles.label}>topico MQTT</label>
               <input
                 type="text"
                 style={styles.input}
-                placeholder="Tema MQTT (ejemplo: miDispositivo/mensaje)"
+                placeholder="topico MQTT (ejemplo: miDispositivo/mensaje)"
                 value={mqttTopic}
                 onChange={(e) => setMqttTopic(e.target.value)}
                 required
@@ -153,7 +143,7 @@ const PaginaPrueba = () => {
             <div style={styles.messageLog}>
               <h6 style={styles.messageLogHeader}>Último mensaje recibido:</h6>
               <p>
-                <strong>Tema:</strong> {lastMessage.topic}<br />
+                <strong>topico:</strong> {lastMessage.topic}<br />
                 <strong>Mensaje:</strong> {lastMessage.message}<br />
                 <strong>Hora:</strong> {lastMessage.timestamp}
               </p>
