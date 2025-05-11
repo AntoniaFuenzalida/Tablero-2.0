@@ -1,18 +1,54 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ModalCambiarContrasena from "./ModalCambiarContrasena";
 import { User, Bell, Lock } from "lucide-react";
 
 const ConfiguracionCuenta = () => {
   const [form, setForm] = useState({
-    nombre: "Profesor Ejemplo",
-    email: "docente@ejemplo.com",
-    departamento: "Matemáticas",
-    oficina: "Edificio A, Piso 2, Oficina 203",
+    nombre: "",
+    email: "",
+    departamento: "",
+    oficina: "",
     notificarCorreo: false,
     notificarEstado: false,
   });
 
+
   const [mostrarModal, setMostrarModal] = useState(false);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const response = await fetch("http://localhost:3001/api/me", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setForm({
+            nombre: data.nombre || "",
+            email: data.correo || "",
+            departamento: data.departamento || "",
+            oficina: data.oficina || "",
+            notificarCorreo: false,
+            notificarEstado: false,
+          });
+        } else {
+          alert(data.error || "No se pudieron cargar los datos");
+        }
+      } catch (err) {
+        alert("Error al cargar datos del usuario");
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -30,12 +66,13 @@ const ConfiguracionCuenta = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Aquí va el token
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           nombre: form.nombre,
           correo: form.email,
-          // Puedes agregar otros campos si lo deseas
+          departamento: form.departamento,
+          oficina: form.oficina,
         }),
       });
 

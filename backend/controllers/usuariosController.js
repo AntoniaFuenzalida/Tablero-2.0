@@ -70,7 +70,7 @@ const registerUser = async (req, res) => {
   
   const updateUser = async (req, res) => {
     const userId = req.user.id;
-    const { nombre, correo, contraseña } = req.body;
+    const { nombre, correo, departamento, oficina, contraseña } = req.body;
 
     try {
       let query = 'UPDATE Usuario SET';
@@ -84,6 +84,15 @@ const registerUser = async (req, res) => {
       if (correo) {
         query += ' correo = ?,';
         params.push(correo);
+      }
+          if (departamento) {
+      query += ' departamento = ?,';
+      params.push(departamento);
+      }
+
+      if (oficina) {
+        query += ' oficina = ?,';
+        params.push(oficina);
       }
 
       if (contraseña) {
