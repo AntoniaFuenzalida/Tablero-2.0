@@ -71,4 +71,24 @@ const deleteMensaje = async (req, res) => {
     }
 };
 
-module.exports = {getMensajes, addMensaje, deleteMensaje};
+// Editar un mensaje por id
+const editMensaje = async (req, res) => {
+    const { id_mensaje } = req.params; // id del mensaje
+    const { texto } = req.body; // nuevo texto del mensaje
+
+    try {
+        const query = `
+            UPDATE TableroCadenasTexto 
+            SET texto = ? 
+            WHERE id = ?
+        `;
+        await db.query(query, [texto, id_mensaje]);
+
+        res.status(200).json({ message: "Mensaje editado correctamente" });
+    } catch (err) {
+        console.error("Error al editar el mensaje:", err);
+        res.status(500).json({ error: "Error al editar el mensaje" });
+    }
+};
+
+module.exports = {getMensajes, addMensaje, deleteMensaje, editMensaje};
