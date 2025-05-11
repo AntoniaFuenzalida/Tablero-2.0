@@ -158,24 +158,26 @@ const PanelMensajes = () => {
           {mensajes.map((msg, index) => (
             <li
               key={index}
-              className={`flex justify-between items-center px-4 py-2 rounded border ${
+              onClick={() => seleccionarMensaje(msg)} // <-- Mueve aquí
+              className={`flex justify-between items-center px-4 py-2 rounded border cursor-pointer ${
                 msg === mensajeActual
                   ? "bg-red-100 border-red-300"
                   : "bg-gray-50 hover:bg-gray-100"
               }`}
             >
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => seleccionarMensaje(msg)}
-                  className="text-green-600 hover:text-green-800"
+                <CheckCircle
+                  size={20}
+                  className="text-green-600"
                   title="Seleccionar como mensaje actual"
-                >
-                  <CheckCircle size={20} />
-                </button>
+                />
                 <span className="text-sm text-gray-800">{msg}</span>
               </div>
               <button
-                onClick={() => eliminarMensaje(index)}
+                onClick={(e) => {
+                  e.stopPropagation(); // <-- Evita seleccionar al hacer clic en eliminar
+                  eliminarMensaje(index);
+                }}
                 className="text-red-600 hover:text-red-800"
                 title="Eliminar"
               >
