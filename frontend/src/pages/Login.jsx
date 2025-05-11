@@ -19,13 +19,18 @@ const Login = () => {
 
       const data = await response.json();
 
-      if (response.ok) {
-        alert("Login exitoso");
-        localStorage.setItem("token", data.token); // guardar token para sesiones
-        navigate("/docente");; // redirige a una página protegida
+    if (response.ok) {
+      alert("Login exitoso");
+      localStorage.setItem("token", data.token);
+
+      const tokenPayload = JSON.parse(atob(data.token.split('.')[1])); // decodifica el JWT
+
+      if (tokenPayload.rol === "admin") {
+        navigate("/admin");
       } else {
-        alert(data.error || "Error al iniciar sesión");
+        navigate("/docente");
       }
+    }
     } catch (error) {
       alert("Error de conexión con el servidor");
     }
