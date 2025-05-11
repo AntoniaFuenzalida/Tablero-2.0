@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Trash2, CheckCircle, Plus } from "lucide-react";
+import mqtt from "mqtt";
 
 const PanelMensajes = () => {
   const [mensajeActual, setMensajeActual] = useState(
@@ -15,6 +16,51 @@ const PanelMensajes = () => {
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [editandoMensaje, setEditandoMensaje] = useState(false);
   const [mensajeTemp, setMensajeTemp] = useState(mensajeActual);
+
+  //Estado de conexión MQTT
+  const [client, setClient] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState("Desconectado");
+  const mqttTopic = "tablero/001";
+
+  //Conexion con MQTT
+  useEffect(() => {
+    const brokerUrl = "ws://192.168.1.10:9001"; // Reemplaza con la URL de tu broker MQTT o mejor dicho por la ip de tu pc
+    const mqttClient = mqtt.connect(brokerUrl);
+
+    mqttClient.on("connect", () => {
+      console.log("[MQTT] Conectado al broker");
+      setConnectionStatus("Conectado");
+    });
+
+    mqttClient.on("error", (err) => {
+      console.error("[MQTT] Error:", err);
+      setConnectionStatus("Error");
+    });
+
+    mqttClient.on("offline", () => {
+      console.warn("[MQTT] Desconectado");
+      setConnectionStatus("Desconectado");
+    });
+
+    setClient(mqttClient);
+
+    return () => {
+      if (mqttClient) mqttClient.end();
+    };
+  }, []);
+
+    //Publicar mensaje actual al topico cuando se cambia
+  useEffect(() => {
+      if (client && client.connected) {
+        client.publish(mqttTopic, mensajeActual, {qos: 0}, (err) => {
+          if (err) {
+            console.error("[MQTT] Error al publicar:", err);
+          } else {
+            console.log("[MQTT] Mensaje publicado:", mensajeActual);
+          }
+        });
+      }
+    }, [mensajeActual, client]);
 
   const agregarMensaje = () => {
     if (nuevoMensaje.trim() === "") return;
@@ -82,6 +128,9 @@ const PanelMensajes = () => {
         ) : (
           <p className="text-gray-700">{mensajeActual}</p>
         )}
+        <p className="text-xs text-gray-500 mt-2">
+          Estado MQTT: <span className="font-semibold">{connectionStatus}</span>
+        </p>
       </div>
 
       {/* MENSAJES PERSONALIZADOS */}

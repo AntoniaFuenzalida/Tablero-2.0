@@ -11,7 +11,7 @@ const PaginaPrueba = () => {
   // Configurar conexión MQTT cuando el componente se monte
   useEffect(() => {
     // Establece la conexión con el broker MQTT
-    const brokerUrl = 'ws://192.168.183.156:9001'; // Cambia esto por la URL de tu broker MQTT
+    const brokerUrl = 'ws://192.168.30.156:9001'; // Cambia esto por la URL de tu broker MQTT
     
     const mqttClient = mqtt.connect(brokerUrl);
     
