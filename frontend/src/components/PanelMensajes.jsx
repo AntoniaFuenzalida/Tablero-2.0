@@ -7,13 +7,14 @@ const PanelMensajes = () => {
   const [mensajes, setMensajes] = useState([]); // Lista de TableroCadenasTexto
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [editandoMensaje, setEditandoMensaje] = useState(false);
-  const [mensajeTemp, setMensajeTemp] = useState("");
+  const [mensajeTemp, setMensajeTemp] = useState(null);
 
   // Obtener los mensajes del servidor
   const fetchMensajes = async () => {
     try {
       const response = await fetch("http://localhost:3001/api/mensajes/1"); // Ruta corregida
       const data = await response.json();
+      console.log("Mensajes obtenidos:", data);
       setMensajes(data.map((msg) => TableroCadenasTexto.fromJSON(msg))); // Convertir JSON a instancias de TableroCadenasTexto
     } catch (error) {
       console.error("Error al obtener los mensajes:", error);
@@ -37,8 +38,7 @@ const PanelMensajes = () => {
         throw new Error("Error al enviar el mensaje");
       }
       const data = await response.json();
-      const nuevoMensaje = TableroCadenasTexto.fromJSON(data); // Convertir respuesta en instancia de TableroCadenasTexto
-      setMensajes((prevMensajes) => [...prevMensajes, nuevoMensaje]);
+      fetchMensajes(); // Actualizar la lista de mensajes después de enviar uno nuevo
     } catch (error) {
       console.error("Error al enviar el mensaje:", error);
       console.log(
@@ -49,6 +49,8 @@ const PanelMensajes = () => {
 
   // Eliminar un mensaje del servidor
   const eliminarMensaje = async (mensajeId) => {
+    console.log("Eliminando mensaje con ID:", mensajeId);
+    if (!mensajeId) return;
     try {
       const response = await fetch(
         `http://localhost:3001/api/mensajes/1/${mensajeId}`,
@@ -151,11 +153,10 @@ const PanelMensajes = () => {
           {mensajes.map((msg) => (
             <li
               key={msg.id}
-              className={`flex justify-between items-center px-4 py-2 rounded border ${
-                mensajeActual && msg.id === mensajeActual.id
+              className={`flex justify-between items-center px-4 py-2 rounded border ${mensajeActual && msg.id === mensajeActual.id
                   ? "bg-red-100 border-red-300"
                   : "bg-gray-50 hover:bg-gray-100"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
                 <button
@@ -171,7 +172,10 @@ const PanelMensajes = () => {
                 </span>
               </div>
               <button
-                onClick={() => eliminarMensaje(msg.id)}
+                onClick={() => {
+                  console.log("Eliminando mensaje:", msg);
+                  eliminarMensaje(msg.id);
+                }}
                 className="text-red-600 hover:text-red-800"
                 title="Eliminar"
               >

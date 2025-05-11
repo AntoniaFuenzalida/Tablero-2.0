@@ -8,7 +8,7 @@ const getMensajes = async (req, res) => {
         const query = `
             SELECT 
                 tc.texto, 
-                tc.id AS mensaje_id, 
+                tc.id AS id, 
                 t.id AS tablero_id
             FROM TableroCadenasTexto tc
             INNER JOIN Tablero t ON tc.tablero_id = t.id
@@ -52,19 +52,22 @@ const deleteMensaje = async (req, res) => {
     try {
         const query = `
             DELETE FROM TableroCadenasTexto 
-            WHERE tablero_id = (
+            WHERE id = ? AND tablero_id = (
                 SELECT t.id 
                 FROM Tablero t 
                 WHERE t.usuario_id = ?
-            ) 
-            AND id = ?
+            )
         `;
-        await db.query(query, [id_usuario, id_mensaje]);
+        const [result] = await db.query(query, [id_mensaje, id_usuario]);
 
-        res.status(200).json({ message: 'Mensaje eliminado correctamente' });
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "Mensaje no encontrado" });
+        }
+
+        res.status(200).json({ message: "Mensaje eliminado correctamente" });
     } catch (err) {
-        console.error('Error al eliminar el mensaje:', err);
-        res.status(500).json({ error: 'Error al eliminar el mensaje' });
+        console.error("Error al eliminar el mensaje:", err);
+        res.status(500).json({ error: "Error al eliminar el mensaje" });
     }
 };
 
