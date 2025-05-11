@@ -6,9 +6,13 @@ const getMensajes = async (req, res) => {
 
     try {
         const query = `
-            SELECT tc.texto 
+            SELECT 
+                tc.texto, 
+                tc.id AS mensaje_id, 
+                t.id AS tablero_id
             FROM TableroCadenasTexto tc
             INNER JOIN Tablero t ON tc.tablero_id = t.id
+            INNER JOIN Usuario u ON t.usuario_id = u.id
             WHERE t.usuario_id = ?
         `;
         const [rows] = await db.query(query, [id]);
