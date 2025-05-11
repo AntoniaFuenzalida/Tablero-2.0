@@ -49,7 +49,9 @@ const PanelMensajes = () => {
     };
   }, []);
 
-    //Publicar mensaje actual al topico cuando se cambia
+  
+  //Publicar mensaje actual al topico cuando se cambia
+  /*
   useEffect(() => {
       if (client && client.connected) {
         client.publish(mqttTopic, mensajeActual, {qos: 0}, (err) => {
@@ -61,6 +63,20 @@ const PanelMensajes = () => {
         });
       }
     }, [mensajeActual, client]);
+*/
+
+  // Funcion para publicar manualmente un mensaje
+  const publicarMensaje = (msg) => {
+    if (client && client.connected) {
+      client.publish(mqttTopic, msg, { qos: 0 }, (err) => {
+        if (err) {
+          console.error("[MQTT] Error al publicar:", err);
+        } else {
+          console.log("[MQTT] Mensaje publicado:", msg);
+        }
+      });
+    }
+  };
 
   const agregarMensaje = () => {
     if (nuevoMensaje.trim() === "") return;
@@ -75,6 +91,7 @@ const PanelMensajes = () => {
 
   const seleccionarMensaje = (msg) => {
     setMensajeActual(msg);
+    publicarMensaje(msg);
   };
 
   return (
@@ -111,6 +128,7 @@ const PanelMensajes = () => {
               <button
                 onClick={() => {
                   setMensajeActual(mensajeTemp);
+                  publicarMensaje(mensajeTemp); // <-- Agregamos esto
                   setEditandoMensaje(false);
                 }}
                 className="bg-red-600 text-white px-4 py-1 rounded hover:bg-red-700 text-sm"
