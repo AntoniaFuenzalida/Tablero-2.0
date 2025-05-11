@@ -28,7 +28,8 @@ services:
     image: eclipse-mosquitto
     container_name: mosquitto
     ports:
-      - "1883:1883"
+      - "1883:1883"   # Para dispositivos IoT
+      - "9001:9001"   # Para WebSockets (navegadores)
     volumes:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
       - ./data:/mosquitto/data

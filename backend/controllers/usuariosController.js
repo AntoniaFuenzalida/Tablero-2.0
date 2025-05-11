@@ -66,6 +66,44 @@ const registerUser = async (req, res) => {
       res.status(500).json({ error: 'Error interno del servidor' });
     }
   };
-  
 
-module.exports = { registerUser, getUsers , loginUser };
+  
+  const updateUser = async (req, res) => {
+    const userId = req.user.id;
+    const { nombre, correo, contraseña } = req.body;
+
+    try {
+      let query = 'UPDATE Usuario SET';
+      const params = [];
+      
+      if (nombre) {
+        query += ' nombre = ?,';
+        params.push(nombre);
+      }
+
+      if (correo) {
+        query += ' correo = ?,';
+        params.push(correo);
+      }
+
+      if (contraseña) {
+        const hashed = await bcrypt.hash(contraseña, 10);
+        query += ' contraseña = ?,';
+        params.push(hashed);
+      }
+
+      query = query.slice(0, -1);
+      query += ' WHERE id = ?';
+      params.push(userId);
+
+      await db.query(query, params);
+
+      res.json({ message: 'Usuario actualizado correctamente' });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Error al actualizar el usuario' });
+    }
+};
+
+
+module.exports = { registerUser, getUsers , loginUser , updateUser};
