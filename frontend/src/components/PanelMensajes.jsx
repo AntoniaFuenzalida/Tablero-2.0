@@ -1,35 +1,112 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Trash2, CheckCircle, Plus } from "lucide-react";
+import TableroCadenasTexto from "../classes/TableroCadenasTexto";
 
 const PanelMensajes = () => {
-  const [mensajeActual, setMensajeActual] = useState(
-    "No me encuentro disponible, por favor vuelva más tarde."
-  );
-
-  const [mensajes, setMensajes] = useState([
-    "En reunión, regreso a las 12:00.",
-    "Estoy en clase, disponible después de las 16:00.",
-    "Fuera de oficina, respondo correos mañana.",
-  ]);
-
+  const [mensajeActual, setMensajeActual] = useState(null); // Referencia al mensaje seleccionado
+  const [mensajes, setMensajes] = useState([]); // Lista de TableroCadenasTexto
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [editandoMensaje, setEditandoMensaje] = useState(false);
-  const [mensajeTemp, setMensajeTemp] = useState(mensajeActual);
 
+  // Obtener los mensajes del servidor
+  const fetchMensajes = async () => {
+    try {
+      const response = await fetch("http://localhost:3001/api/mensajes/1"); // Ruta corregida
+      const data = await response.json();
+      setMensajes(data.map((msg) => TableroCadenasTexto.fromJSON(msg))); // Convertir JSON a instancias de TableroCadenasTexto
+    } catch (error) {
+      console.error("Error al obtener los mensajes:", error);
+      console.log(
+        "Error al obtener los mensajes: No se pudo conectar con el servidor."
+      );
+    }
+  };
+
+  // Enviar un nuevo mensaje al servidor
+  const enviarMensaje = async (texto) => {
+    try {
+      const response = await fetch("http://localhost:3001/api/mensajes/1", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ texto }),
+      });
+      if (!response.ok) {
+        throw new Error("Error al enviar el mensaje");
+      }
+      fetchMensajes(); // Actualizar la lista de mensajes después de enviar uno nuevo
+    } catch (error) {
+      console.error("Error al enviar el mensaje:", error);
+      console.log(
+        "Error al enviar el mensaje: No se pudo conectar con el servidor."
+      );
+    }
+  };
+
+  // Editar un mensaje en el servidor
+  const editarMensaje = async (mensajeId, nuevoTexto) => {
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/mensajes/${mensajeId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ texto: nuevoTexto }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Error al editar el mensaje");
+      }
+      fetchMensajes(); // Actualizar la lista de mensajes después de editar uno
+    } catch (error) {
+      console.error("Error al editar el mensaje:", error);
+      console.log(
+        "Error al editar el mensaje: No se pudo conectar con el servidor."
+      );
+    }
+  };
+
+  // Eliminar un mensaje del servidor
+  const eliminarMensaje = async (mensajeId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/mensajes/1/${mensajeId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Error al eliminar el mensaje");
+      }
+      setMensajes((prevMensajes) =>
+        prevMensajes.filter((msg) => msg.id !== mensajeId)
+      );
+    } catch (error) {
+      console.error("Error al eliminar el mensaje:", error);
+      console.log(
+        "Error al eliminar el mensaje: No se pudo conectar con el servidor."
+      );
+    }
+  };
+
+  // Agregar un nuevo mensaje
   const agregarMensaje = () => {
     if (nuevoMensaje.trim() === "") return;
-    setMensajes([...mensajes, nuevoMensaje]);
+    enviarMensaje(nuevoMensaje);
     setNuevoMensaje("");
   };
 
-  const eliminarMensaje = (index) => {
-    const nuevosMensajes = mensajes.filter((_, i) => i !== index);
-    setMensajes(nuevosMensajes);
+  // Seleccionar un mensaje como el actual (ligado directamente)
+  const seleccionarMensaje = (msg) => {
+    setMensajeActual(msg); // Referencia directa al mensaje en la lista
   };
 
-  const seleccionarMensaje = (msg) => {
-    setMensajeActual(msg);
-  };
+  useEffect(() => {
+    fetchMensajes();
+  }, []);
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -40,12 +117,9 @@ const PanelMensajes = () => {
             <CheckCircle className="h-5 w-5 text-green-500" />
             Mensaje Actual
           </h3>
-          {!editandoMensaje && (
+          {!editandoMensaje && mensajeActual && (
             <button
-              onClick={() => {
-                setMensajeTemp(mensajeActual);
-                setEditandoMensaje(true);
-              }}
+              onClick={() => setEditandoMensaje(true)}
               className="text-sm text-blue-600 hover:underline"
             >
               Editar
@@ -58,13 +132,19 @@ const PanelMensajes = () => {
             <textarea
               className="w-full border rounded p-2 text-sm"
               rows={2}
-              value={mensajeTemp}
-              onChange={(e) => setMensajeTemp(e.target.value)}
+              value={mensajeActual.texto}
+              onChange={(e) => {
+                const nuevoTexto = e.target.value;
+                setMensajeActual((prev) => ({
+                  ...prev,
+                  texto: nuevoTexto,
+                }));
+              }}
             />
             <div className="flex gap-2">
               <button
                 onClick={() => {
-                  setMensajeActual(mensajeTemp);
+                  editarMensaje(mensajeActual.id, mensajeActual.texto);
                   setEditandoMensaje(false);
                 }}
                 className="bg-red-600 text-white px-4 py-1 rounded hover:bg-red-700 text-sm"
@@ -80,19 +160,21 @@ const PanelMensajes = () => {
             </div>
           </div>
         ) : (
-          <p className="text-gray-700">{mensajeActual}</p>
+          <p className="text-gray-700">
+            {mensajeActual ? mensajeActual.texto : "No hay mensaje seleccionado"}
+          </p>
         )}
       </div>
 
       {/* MENSAJES PERSONALIZADOS */}
       <div className="bg-white p-4 rounded shadow">
-        <h3 className="text-lg font-semibold mb-4">Mensajes Personalizados</h3>
+        <h3 className="text-lg font-semibold mb-4">Mensajes</h3>
         <ul className="space-y-2">
-          {mensajes.map((msg, index) => (
+          {mensajes.map((msg) => (
             <li
-              key={index}
+              key={msg.id}
               className={`flex justify-between items-center px-4 py-2 rounded border ${
-                msg === mensajeActual
+                mensajeActual && msg.id === mensajeActual.id
                   ? "bg-red-100 border-red-300"
                   : "bg-gray-50 hover:bg-gray-100"
               }`}
@@ -105,10 +187,10 @@ const PanelMensajes = () => {
                 >
                   <CheckCircle size={20} />
                 </button>
-                <span className="text-sm text-gray-800">{msg}</span>
+                <span className="text-sm text-gray-800">{msg.texto}</span>
               </div>
               <button
-                onClick={() => eliminarMensaje(index)}
+                onClick={() => eliminarMensaje(msg.id)}
                 className="text-red-600 hover:text-red-800"
                 title="Eliminar"
               >
