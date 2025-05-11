@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { use, useState, useEffect } from "react";
 import { Trash2, CheckCircle, Plus } from "lucide-react";
 
 const PanelMensajes = () => {
@@ -16,9 +16,50 @@ const PanelMensajes = () => {
   const [editandoMensaje, setEditandoMensaje] = useState(false);
   const [mensajeTemp, setMensajeTemp] = useState(mensajeActual);
 
+const fetchMensajes = async () => {
+  try {
+    const response = await fetch("http://localhost:3001/api/mensajes/1"); // Ruta corregida
+    const data = await response.json();
+    console.log("Mensajes obtenidos:", data);
+  } catch (error) {
+    console.error("Error al obtener los mensajes:", error);
+    console.log(
+      "Error al obtener los mensajes: No se pudo conectar con el servidor."
+    );
+  }
+};
+
+  // // enviar el mensaje nuevo al servidor
+  // const enviarMensaje = async (mensaje) => {
+  //   try {
+  //     const response = await fetch("http://localhost:3001/api/mensajes/addMensaje/", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ mensaje }),
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error("Error al enviar el mensaje");
+  //     }
+  //     const data = await response.json();
+  //     console.log("Mensaje enviado:", data);
+  //   } catch (error) {
+  //     console.error("Error al enviar el mensaje:", error);
+  //     console.log(
+  //       "Error al enviar el mensaje: No se pudo conectar con el servidor."
+  //     );
+  //   }
+  // };
+
+  useEffect(() => {
+    fetchMensajes();
+  }, []);
+
   const agregarMensaje = () => {
     if (nuevoMensaje.trim() === "") return;
     setMensajes([...mensajes, nuevoMensaje]);
+    //enviarMensaje(nuevoMensaje);
     setNuevoMensaje("");
   };
 
