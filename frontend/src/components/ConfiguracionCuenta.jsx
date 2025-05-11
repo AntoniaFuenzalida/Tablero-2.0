@@ -22,10 +22,35 @@ const ConfiguracionCuenta = () => {
     setForm({ ...form, [key]: !form[key] });
   };
 
-  const guardarCambios = () => {
-    console.log("Datos guardados:", form);
-    alert("Cambios guardados correctamente ✅");
+  const guardarCambios = async () => {
+    try {
+      const token = localStorage.getItem('token');
+
+      const response = await fetch("http://localhost:3001/api/update", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Aquí va el token
+        },
+        body: JSON.stringify({
+          nombre: form.nombre,
+          correo: form.email,
+          // Puedes agregar otros campos si lo deseas
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Cambios guardados correctamente ✅");
+      } else {
+        alert(data.error || "Error al guardar cambios");
+      }
+    } catch (error) {
+      alert("Error de conexión con el servidor");
+    }
   };
+
 
   return (
     <section className="space-y-6">

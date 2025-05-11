@@ -10,5 +10,6 @@ router.put('/update', verifyToken, updateUser);
 router.get('/users', getUsers);
 router.post('/register', registerUser);
 router.post('/login', loginUser);
+router.put('/update', verifyToken, updateUser);
 
 module.exports = router;
