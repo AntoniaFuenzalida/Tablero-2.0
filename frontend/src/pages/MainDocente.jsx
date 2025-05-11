@@ -4,9 +4,19 @@ import PanelMensajes from "../components/PanelMensajes";
 import HorarioAtencion from "../components/HorarioAtencion";
 import ConfiguracionCuenta from "../components/ConfiguracionCuenta";
 import logoUtalca from "../assets/logo-utalca.png";
+import { useNavigate } from "react-router-dom";
+
 
 const MainDocente = () => {
   const [pestanaActiva, setPestanaActiva] = useState("mensajes");
+
+  const navigate = useNavigate();
+
+  const cerrarSesion = () => {
+    localStorage.removeItem("token"); // elimina token
+    navigate("/login");               // redirige a login
+  };
+
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -32,6 +42,13 @@ const MainDocente = () => {
             />
             <span className="text-sm font-medium text-gray-700 hidden sm:inline">Profesor Ejemplo</span>
           </div>
+          <button
+            onClick={cerrarSesion}
+            className="text-sm text-red-600 hover:underline ml-4"
+          >
+            Cerrar sesión
+          </button>
+
         </div>
       </header>
 
