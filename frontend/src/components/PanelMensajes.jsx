@@ -9,6 +9,11 @@ const PanelMensajes = () => {
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [editandoMensaje, setEditandoMensaje] = useState(false);
 
+  // Estado de conexión MQTT
+  const [client, setClient] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState("Desconectado");
+  const mqttTopic = "tablero/001";
+
   // Obtener los mensajes del servidor
   const fetchMensajes = async () => {
     try {
@@ -93,15 +98,9 @@ const PanelMensajes = () => {
     }
   };
 
-  // Agregar un nuevo mensaje
-  //Estado de conexión MQTT
-  const [client, setClient] = useState(null);
-  const [connectionStatus, setConnectionStatus] = useState("Desconectado");
-  const mqttTopic = "tablero/001";
-
-  //Conexion con MQTT
+  // Conexión con MQTT
   useEffect(() => {
-    const brokerUrl = "ws://192.168.1.10:9001"; // Reemplaza con la URL de tu broker MQTT o mejor dicho por la ip de tu pc
+    const brokerUrl = "ws://192.168.1.10:9001"; // Reemplaza con la URL de tu broker MQTT
     const mqttClient = mqtt.connect(brokerUrl);
 
     mqttClient.on("connect", () => {
@@ -126,7 +125,6 @@ const PanelMensajes = () => {
     };
   }, []);
 
-        } else {
   const publicarMensaje = (msg) => {
     if (client && client.connected) {
       client.publish(mqttTopic, msg.texto, { qos: 0 }, (err) => {
@@ -139,6 +137,8 @@ const PanelMensajes = () => {
     }
   };
 
+  
+  // Agregar un nuevo mensaje
   const agregarMensaje = () => {
     if (nuevoMensaje.trim() === "") return;
     enviarMensaje(nuevoMensaje);
@@ -148,7 +148,6 @@ const PanelMensajes = () => {
   // Seleccionar un mensaje como el actual (ligado directamente)
   const seleccionarMensaje = (msg) => {
     setMensajeActual(msg); // Referencia directa al mensaje en la lista
-    setMensajeActual(msg);
     publicarMensaje(msg);
   };
 
@@ -193,8 +192,7 @@ const PanelMensajes = () => {
               <button
                 onClick={() => {
                   editarMensaje(mensajeActual.id, mensajeActual.texto);
-                  setMensajeActual(mensajeTemp);
-                  publicarMensaje(mensajeTemp); // <-- Agregamos esto
+                  publicarMensaje(mensajeActual); // Publicar el mensaje actualizado
                   setEditandoMensaje(false);
                 }}
                 className="bg-red-600 text-white px-4 py-1 rounded hover:bg-red-700 text-sm"
@@ -228,15 +226,14 @@ const PanelMensajes = () => {
               key={msg.id}
               className={`flex justify-between items-center px-4 py-2 rounded border ${
                 mensajeActual && msg.id === mensajeActual.id
-              onClick={() => seleccionarMensaje(msg)} // <-- Mueve aquí
                   ? "bg-red-100 border-red-300"
                   : "bg-gray-50 hover:bg-gray-100"
               }`}
             >
               <div className="flex items-center gap-3">
-                <CheckCircle
-                  size={20}
-                  className="text-green-600"
+                <button
+                  onClick={() => seleccionarMensaje(msg)}
+                  className="text-green-600 hover:text-green-800"
                   title="Seleccionar como mensaje actual"
                 >
                   <CheckCircle size={20} />
