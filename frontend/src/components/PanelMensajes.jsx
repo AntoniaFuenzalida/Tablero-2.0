@@ -74,7 +74,7 @@ const PanelMensajes = () => {
   const eliminarMensaje = async (mensajeId) => {
     try {
       const response = await fetch(
-        `http://localhost:3001/api/mensajes/1/${mensajeId}`,
+        `http://localhost:3001/api/mensajes/${mensajeId}`,
         {
           method: "DELETE",
         }
@@ -101,7 +101,7 @@ const PanelMensajes = () => {
 
   //Conexion con MQTT
   useEffect(() => {
-    const brokerUrl = "ws://192.168.1.10:9001"; // Reemplaza con la URL de tu broker MQTT o mejor dicho por la ip de tu pc
+    const brokerUrl = "ws://192.168.1.13:9001"; // Reemplaza con la URL de tu broker MQTT o mejor dicho por la ip de tu pc
     const mqttClient = mqtt.connect(brokerUrl);
 
     mqttClient.on("connect", () => {
@@ -126,7 +126,6 @@ const PanelMensajes = () => {
     };
   }, []);
 
-        } else {
   const publicarMensaje = (msg) => {
     if (client && client.connected) {
       client.publish(mqttTopic, msg.texto, { qos: 0 }, (err) => {
@@ -193,8 +192,8 @@ const PanelMensajes = () => {
               <button
                 onClick={() => {
                   editarMensaje(mensajeActual.id, mensajeActual.texto);
-                  setMensajeActual(mensajeTemp);
-                  publicarMensaje(mensajeTemp); // <-- Agregamos esto
+                  // No need to set the message again since we're already working with the updated version
+                  publicarMensaje(mensajeActual);
                   setEditandoMensaje(false);
                 }}
                 className="bg-red-600 text-white px-4 py-1 rounded hover:bg-red-700 text-sm"
@@ -226,9 +225,9 @@ const PanelMensajes = () => {
           {mensajes.map((msg) => (
             <li
               key={msg.id}
+              onClick={() => seleccionarMensaje(msg)}
               className={`flex justify-between items-center px-4 py-2 rounded border ${
                 mensajeActual && msg.id === mensajeActual.id
-              onClick={() => seleccionarMensaje(msg)} // <-- Mueve aquí
                   ? "bg-red-100 border-red-300"
                   : "bg-gray-50 hover:bg-gray-100"
               }`}
@@ -238,9 +237,7 @@ const PanelMensajes = () => {
                   size={20}
                   className="text-green-600"
                   title="Seleccionar como mensaje actual"
-                >
-                  <CheckCircle size={20} />
-                </button>
+                />
                 <span className="text-sm text-gray-800">{msg.texto}</span>
               </div>
               <button
