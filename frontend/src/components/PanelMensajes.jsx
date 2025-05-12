@@ -100,7 +100,7 @@ const PanelMensajes = () => {
 
   // Conexión con MQTT
   useEffect(() => {
-    const brokerUrl = "ws://192.168.1.13:9001"; // Reemplaza con la URL de tu broker MQTT
+    const brokerUrl = "ws://192.168.93.156:9001"; // Reemplaza con la URL de tu broker MQTT
     const mqttClient = mqtt.connect(brokerUrl);
 
     mqttClient.on("connect", () => {
