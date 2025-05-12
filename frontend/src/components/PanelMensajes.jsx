@@ -9,6 +9,11 @@ const PanelMensajes = () => {
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [editandoMensaje, setEditandoMensaje] = useState(false);
 
+  // Estado de conexión MQTT
+  const [client, setClient] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState("Desconectado");
+  const mqttTopic = "tablero/001";
+
   // Obtener los mensajes del servidor
   const fetchMensajes = async () => {
     try {
@@ -93,13 +98,7 @@ const PanelMensajes = () => {
     }
   };
 
-  // Agregar un nuevo mensaje
-  //Estado de conexión MQTT
-  const [client, setClient] = useState(null);
-  const [connectionStatus, setConnectionStatus] = useState("Desconectado");
-  const mqttTopic = "tablero/001";
-
-  //Conexion con MQTT
+  // Conexión con MQTT
   useEffect(() => {
     const brokerUrl = "ws://192.168.1.13:9001"; // Reemplaza con la URL de tu broker MQTT o mejor dicho por la ip de tu pc
     const mqttClient = mqtt.connect(brokerUrl);
@@ -138,6 +137,8 @@ const PanelMensajes = () => {
     }
   };
 
+  
+  // Agregar un nuevo mensaje
   const agregarMensaje = () => {
     if (nuevoMensaje.trim() === "") return;
     enviarMensaje(nuevoMensaje);
@@ -147,7 +148,6 @@ const PanelMensajes = () => {
   // Seleccionar un mensaje como el actual (ligado directamente)
   const seleccionarMensaje = (msg) => {
     setMensajeActual(msg); // Referencia directa al mensaje en la lista
-    setMensajeActual(msg);
     publicarMensaje(msg);
   };
 
@@ -192,8 +192,7 @@ const PanelMensajes = () => {
               <button
                 onClick={() => {
                   editarMensaje(mensajeActual.id, mensajeActual.texto);
-                  // No need to set the message again since we're already working with the updated version
-                  publicarMensaje(mensajeActual);
+                  publicarMensaje(mensajeActual); // Publicar el mensaje actualizado
                   setEditandoMensaje(false);
                 }}
                 className="bg-red-600 text-white px-4 py-1 rounded hover:bg-red-700 text-sm"
@@ -233,9 +232,9 @@ const PanelMensajes = () => {
               }`}
             >
               <div className="flex items-center gap-3">
-                <CheckCircle
-                  size={20}
-                  className="text-green-600"
+                <button
+                  onClick={() => seleccionarMensaje(msg)}
+                  className="text-green-600 hover:text-green-800"
                   title="Seleccionar como mensaje actual"
                 />
                 <span className="text-sm text-gray-800">{msg.texto}</span>
