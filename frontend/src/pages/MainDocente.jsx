@@ -1,12 +1,51 @@
-import React, { useState } from "react";
-import SidebarDocente from "../components/SidebarDocente";
+import { useEffect, useState } from "react";import SidebarDocente from "../components/SidebarDocente";
 import PanelMensajes from "../components/PanelMensajes";
 import HorarioAtencion from "../components/HorarioAtencion";
 import ConfiguracionCuenta from "../components/ConfiguracionCuenta";
 import logoUtalca from "../assets/logo-utalca.png";
+import { useNavigate } from "react-router-dom";
+
 
 const MainDocente = () => {
   const [pestanaActiva, setPestanaActiva] = useState("mensajes");
+
+  const navigate = useNavigate();
+
+  const cerrarSesion = () => {
+    localStorage.removeItem("token"); // elimina token
+    navigate("/login");               // redirige a login
+  };
+  const [usuario, setUsuario] = useState({ nombre: "", departamento: "" });
+
+  useEffect(() => {
+    const fetchUsuario = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch("http://localhost:3001/api/me", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setUsuario({
+            nombre: data.nombre,
+            departamento: data.departamento,
+          });
+        } else {
+          console.error(data.error || "Error al obtener usuario");
+        }
+      } catch (err) {
+        console.error("Error de conexión al servidor");
+      }
+    };
+
+    fetchUsuario();
+  }, []);
+
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -30,8 +69,17 @@ const MainDocente = () => {
               alt="Avatar"
               className="w-8 h-8 rounded-full"
             />
-            <span className="text-sm font-medium text-gray-700 hidden sm:inline">Profesor Ejemplo</span>
+          <div className="hidden sm:flex flex-col text-right">
+            <span className="text-sm font-medium text-gray-700">{usuario.nombre}</span>
           </div>
+          </div>
+          <button
+            onClick={cerrarSesion}
+            className="text-sm text-red-600 hover:underline ml-4"
+          >
+            Cerrar sesión
+          </button>
+
         </div>
       </header>
 
