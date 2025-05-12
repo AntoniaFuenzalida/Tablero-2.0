@@ -100,7 +100,7 @@ const PanelMensajes = () => {
 
   // Conexión con MQTT
   useEffect(() => {
-    const brokerUrl = "ws://192.168.1.10:9001"; // Reemplaza con la URL de tu broker MQTT
+    const brokerUrl = "ws://192.168.1.13:9001"; // Reemplaza con la URL de tu broker MQTT
     const mqttClient = mqtt.connect(brokerUrl);
 
     mqttClient.on("connect", () => {
@@ -224,6 +224,7 @@ const PanelMensajes = () => {
           {mensajes.map((msg) => (
             <li
               key={msg.id}
+              onClick={() => seleccionarMensaje(msg)}
               className={`flex justify-between items-center px-4 py-2 rounded border ${
                 mensajeActual && msg.id === mensajeActual.id
                   ? "bg-red-100 border-red-300"
