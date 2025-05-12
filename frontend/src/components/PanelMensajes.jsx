@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Trash2, CheckCircle, Plus } from "lucide-react";
+import mqtt from "mqtt";
 import TableroCadenasTexto from "../classes/TableroCadenasTexto";
 
 const PanelMensajes = () => {
@@ -93,6 +94,51 @@ const PanelMensajes = () => {
   };
 
   // Agregar un nuevo mensaje
+  //Estado de conexión MQTT
+  const [client, setClient] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState("Desconectado");
+  const mqttTopic = "tablero/001";
+
+  //Conexion con MQTT
+  useEffect(() => {
+    const brokerUrl = "ws://192.168.1.10:9001"; // Reemplaza con la URL de tu broker MQTT o mejor dicho por la ip de tu pc
+    const mqttClient = mqtt.connect(brokerUrl);
+
+    mqttClient.on("connect", () => {
+      console.log("[MQTT] Conectado al broker");
+      setConnectionStatus("Conectado");
+    });
+
+    mqttClient.on("error", (err) => {
+      console.error("[MQTT] Error:", err);
+      setConnectionStatus("Error");
+    });
+
+    mqttClient.on("offline", () => {
+      console.warn("[MQTT] Desconectado");
+      setConnectionStatus("Desconectado");
+    });
+
+    setClient(mqttClient);
+
+    return () => {
+      if (mqttClient) mqttClient.end();
+    };
+  }, []);
+
+        } else {
+  const publicarMensaje = (msg) => {
+    if (client && client.connected) {
+      client.publish(mqttTopic, msg.texto, { qos: 0 }, (err) => {
+        if (err) {
+          console.error("[MQTT] Error al publicar:", err);
+        } else {
+          console.log("[MQTT] Mensaje publicado:", msg);
+        }
+      });
+    }
+  };
+
   const agregarMensaje = () => {
     if (nuevoMensaje.trim() === "") return;
     enviarMensaje(nuevoMensaje);
@@ -102,6 +148,8 @@ const PanelMensajes = () => {
   // Seleccionar un mensaje como el actual (ligado directamente)
   const seleccionarMensaje = (msg) => {
     setMensajeActual(msg); // Referencia directa al mensaje en la lista
+    setMensajeActual(msg);
+    publicarMensaje(msg);
   };
 
   useEffect(() => {
@@ -145,6 +193,8 @@ const PanelMensajes = () => {
               <button
                 onClick={() => {
                   editarMensaje(mensajeActual.id, mensajeActual.texto);
+                  setMensajeActual(mensajeTemp);
+                  publicarMensaje(mensajeTemp); // <-- Agregamos esto
                   setEditandoMensaje(false);
                 }}
                 className="bg-red-600 text-white px-4 py-1 rounded hover:bg-red-700 text-sm"
@@ -164,6 +214,9 @@ const PanelMensajes = () => {
             {mensajeActual ? mensajeActual.texto : "No hay mensaje seleccionado"}
           </p>
         )}
+        <p className="text-xs text-gray-500 mt-2">
+          Estado MQTT: <span className="font-semibold">{connectionStatus}</span>
+        </p>
       </div>
 
       {/* MENSAJES PERSONALIZADOS */}
@@ -175,14 +228,15 @@ const PanelMensajes = () => {
               key={msg.id}
               className={`flex justify-between items-center px-4 py-2 rounded border ${
                 mensajeActual && msg.id === mensajeActual.id
+              onClick={() => seleccionarMensaje(msg)} // <-- Mueve aquí
                   ? "bg-red-100 border-red-300"
                   : "bg-gray-50 hover:bg-gray-100"
               }`}
             >
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => seleccionarMensaje(msg)}
-                  className="text-green-600 hover:text-green-800"
+                <CheckCircle
+                  size={20}
+                  className="text-green-600"
                   title="Seleccionar como mensaje actual"
                 >
                   <CheckCircle size={20} />
