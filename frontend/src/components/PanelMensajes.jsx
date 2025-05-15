@@ -13,7 +13,7 @@ const PanelMensajes = () => {
   const [client, setClient] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState("Desconectado");
 
-  
+
 
   const mqttTopic = "tablero/001";
 
@@ -103,7 +103,7 @@ const PanelMensajes = () => {
 
   // Conexión con MQTT
   useEffect(() => {
-    const brokerUrl = "ws://192.168.93.156:9001"; // Reemplaza con la URL de tu broker MQTT/reemplazar por la ip que corresponde al servidor GCP
+    const brokerUrl = "ws://172.27.208.1:9001"; // Reemplaza con la URL de tu broker MQTT/reemplazar por la ip que corresponde al servidor GCP
     const mqttClient = mqtt.connect(brokerUrl);
 
     mqttClient.on("connect", () => {
