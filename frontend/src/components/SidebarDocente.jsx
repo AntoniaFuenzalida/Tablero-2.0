@@ -22,7 +22,7 @@ const SidebarDocente = () => {
         
         // Formatear los datos para mostrarlos en el select
         const tablerosFormateados = data.map(tablero => ({
-          id: `TB-${tablero.id}`
+          id: `${tablero.id}`
         }));
         
         setDispositivos(tablerosFormateados);

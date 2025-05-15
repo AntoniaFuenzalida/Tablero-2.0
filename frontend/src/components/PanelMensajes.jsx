@@ -12,12 +12,15 @@ const PanelMensajes = () => {
   // Estado de conexión MQTT
   const [client, setClient] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState("Desconectado");
+
+  
+
   const mqttTopic = "tablero/001";
 
   // Obtener los mensajes del servidor
   const fetchMensajes = async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/mensajes/1"); // Ruta corregida
+      const response = await fetch("http://localhost:3001/api/mensajes/2"); // modificar el 1 donde realmente deberia de ir el id del tablero
       const data = await response.json();
       setMensajes(data.map((msg) => TableroCadenasTexto.fromJSON(msg))); // Convertir JSON a instancias de TableroCadenasTexto
     } catch (error) {
@@ -31,7 +34,7 @@ const PanelMensajes = () => {
   // Enviar un nuevo mensaje al servidor
   const enviarMensaje = async (texto) => {
     try {
-      const response = await fetch("http://localhost:3001/api/mensajes/1", {
+      const response = await fetch("http://localhost:3001/api/mensajes/2", {// modificar el 1 donde realmente deberia de ir el id del tablero
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -79,7 +82,7 @@ const PanelMensajes = () => {
   const eliminarMensaje = async (mensajeId) => {
     try {
       const response = await fetch(
-        `http://localhost:3001/api/mensajes/1/${mensajeId}`,
+        `http://localhost:3001/api/mensajes/1/${mensajeId}`,//corregir el 1 ya que deberi ade ir la id del tablero
         {
           method: "DELETE",
         }
@@ -100,7 +103,7 @@ const PanelMensajes = () => {
 
   // Conexión con MQTT
   useEffect(() => {
-    const brokerUrl = "ws://192.168.93.156:9001"; // Reemplaza con la URL de tu broker MQTT
+    const brokerUrl = "ws://192.168.93.156:9001"; // Reemplaza con la URL de tu broker MQTT/reemplazar por la ip que corresponde al servidor GCP
     const mqttClient = mqtt.connect(brokerUrl);
 
     mqttClient.on("connect", () => {
