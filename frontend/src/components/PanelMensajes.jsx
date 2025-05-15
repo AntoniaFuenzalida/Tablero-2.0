@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Trash2, CheckCircle, Plus } from "lucide-react";
-import mqtt from "mqtt";
 import TableroCadenasTexto from "../classes/TableroCadenasTexto";
 
 const PanelMensajes = () => {
@@ -9,18 +8,10 @@ const PanelMensajes = () => {
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [editandoMensaje, setEditandoMensaje] = useState(false);
 
-  // Estado de conexión MQTT
-  const [client, setClient] = useState(null);
-  const [connectionStatus, setConnectionStatus] = useState("Desconectado");
-
-
-
-  const mqttTopic = "tablero/001";
-
   // Obtener los mensajes del servidor
   const fetchMensajes = async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/mensajes/2"); // modificar el 1 donde realmente deberia de ir el id del tablero
+      const response = await fetch("http://localhost:3001/api/mensajes/1"); // Ruta corregida
       const data = await response.json();
       setMensajes(data.map((msg) => TableroCadenasTexto.fromJSON(msg))); // Convertir JSON a instancias de TableroCadenasTexto
     } catch (error) {
@@ -34,7 +25,7 @@ const PanelMensajes = () => {
   // Enviar un nuevo mensaje al servidor
   const enviarMensaje = async (texto) => {
     try {
-      const response = await fetch("http://localhost:3001/api/mensajes/2", {// modificar el 1 donde realmente deberia de ir el id del tablero
+      const response = await fetch("http://localhost:3001/api/mensajes/1", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -82,7 +73,7 @@ const PanelMensajes = () => {
   const eliminarMensaje = async (mensajeId) => {
     try {
       const response = await fetch(
-        `http://localhost:3001/api/mensajes/1/${mensajeId}`,//corregir el 1 ya que deberi ade ir la id del tablero
+        `http://localhost:3001/api/mensajes/1/${mensajeId}`,
         {
           method: "DELETE",
         }
@@ -101,46 +92,6 @@ const PanelMensajes = () => {
     }
   };
 
-  // Conexión con MQTT
-  useEffect(() => {
-    const brokerUrl = "ws://172.27.208.1:9001"; // Reemplaza con la URL de tu broker MQTT/reemplazar por la ip que corresponde al servidor GCP
-    const mqttClient = mqtt.connect(brokerUrl);
-
-    mqttClient.on("connect", () => {
-      console.log("[MQTT] Conectado al broker");
-      setConnectionStatus("Conectado");
-    });
-
-    mqttClient.on("error", (err) => {
-      console.error("[MQTT] Error:", err);
-      setConnectionStatus("Error");
-    });
-
-    mqttClient.on("offline", () => {
-      console.warn("[MQTT] Desconectado");
-      setConnectionStatus("Desconectado");
-    });
-
-    setClient(mqttClient);
-
-    return () => {
-      if (mqttClient) mqttClient.end();
-    };
-  }, []);
-
-  const publicarMensaje = (msg) => {
-    if (client && client.connected) {
-      client.publish(mqttTopic, msg.texto, { qos: 0 }, (err) => {
-        if (err) {
-          console.error("[MQTT] Error al publicar:", err);
-        } else {
-          console.log("[MQTT] Mensaje publicado:", msg);
-        }
-      });
-    }
-  };
-
-  
   // Agregar un nuevo mensaje
   const agregarMensaje = () => {
     if (nuevoMensaje.trim() === "") return;
@@ -151,7 +102,6 @@ const PanelMensajes = () => {
   // Seleccionar un mensaje como el actual (ligado directamente)
   const seleccionarMensaje = (msg) => {
     setMensajeActual(msg); // Referencia directa al mensaje en la lista
-    publicarMensaje(msg);
   };
 
   useEffect(() => {
@@ -195,7 +145,6 @@ const PanelMensajes = () => {
               <button
                 onClick={() => {
                   editarMensaje(mensajeActual.id, mensajeActual.texto);
-                  publicarMensaje(mensajeActual); // Publicar el mensaje actualizado
                   setEditandoMensaje(false);
                 }}
                 className="bg-red-600 text-white px-4 py-1 rounded hover:bg-red-700 text-sm"
@@ -215,9 +164,6 @@ const PanelMensajes = () => {
             {mensajeActual ? mensajeActual.texto : "No hay mensaje seleccionado"}
           </p>
         )}
-        <p className="text-xs text-gray-500 mt-2">
-          Estado MQTT: <span className="font-semibold">{connectionStatus}</span>
-        </p>
       </div>
 
       {/* MENSAJES PERSONALIZADOS */}
@@ -227,7 +173,6 @@ const PanelMensajes = () => {
           {mensajes.map((msg) => (
             <li
               key={msg.id}
-              onClick={() => seleccionarMensaje(msg)}
               className={`flex justify-between items-center px-4 py-2 rounded border ${
                 mensajeActual && msg.id === mensajeActual.id
                   ? "bg-red-100 border-red-300"
