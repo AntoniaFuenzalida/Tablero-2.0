@@ -2,6 +2,18 @@ import React, { useState } from "react";
 
 const SidebarDocente = () => {
   const [disponible, setDisponible] = useState(false);
+  const [dispositivoId, setDispositivoId] = useState("TB-001");
+
+  //lista de dispositivos/topicos disponibles (la idea es que esto se conecte a la api)
+  const dispositivos = [
+    { id: "TB-001", nombre: "Panel Tablero" },
+    { id: "TB-002", nombre: "Panel Tablero 2" },
+    { id: "TB-003", nombre: "Panel Tablero 3" },
+  ];
+
+  const handleCambioDispositivo = (e) => {
+    setDispositivoId(e.target.value);
+  }
 
   return (
     <aside className="w-full md:w-72 flex flex-col gap-6">
@@ -41,14 +53,26 @@ const SidebarDocente = () => {
           Panel Tablero:{" "}
           <span className="text-green-600 font-semibold">● Conectado</span>
         </p>
-        <p>
-          Última sincronización:{" "}
-          <span className="text-gray-600">Hace 5 minutos</span>
-        </p>
-        <p>
-          ID del dispositivo:{" "}
-          <span className="font-mono text-gray-800">TB-001</span>
-        </p>
+        <div className="flex flex-col mt-1">
+          <label htmlFor="dispositivoId" className="text-sm text-gray-700 mb-1">
+            Seleccionar tablero:
+          </label>
+          <select
+            id="dispositivoId"
+            value={dispositivoId}
+            onChange={handleCambioDispositivo}
+            className="font-mono text-gray-800 text-sm border border-gray-300 rounded p-1 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
+          >
+            {dispositivos.map((dispositivo) => (
+              <option key={dispositivo.id} value={dispositivo.id}>
+                {dispositivo.id} - {dispositivo.nombre}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs mt-1 text-gray-500">
+            Tópico actual: <span className="font-mono font-medium">{dispositivoId}</span>
+          </p>
+        </div>
       </div>
     </aside>
   );
