@@ -6,9 +6,9 @@ const SidebarDocente = () => {
 
   //lista de dispositivos/topicos disponibles (la idea es que esto se conecte a la api)
   const dispositivos = [
-    { id: "TB-001", nombre: "Panel Tablero" },
-    { id: "TB-002", nombre: "Panel Tablero 2" },
-    { id: "TB-003", nombre: "Panel Tablero 3" },
+    { id: "TB-001"},
+    { id: "TB-002"},
+    { id: "TB-003"},
   ];
 
   const handleCambioDispositivo = (e) => {
@@ -65,7 +65,7 @@ const SidebarDocente = () => {
           >
             {dispositivos.map((dispositivo) => (
               <option key={dispositivo.id} value={dispositivo.id}>
-                {dispositivo.id} - {dispositivo.nombre}
+                {dispositivo.id}
               </option>
             ))}
           </select>
