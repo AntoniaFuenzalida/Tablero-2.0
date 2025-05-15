@@ -1,7 +1,50 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const SidebarDocente = () => {
   const [disponible, setDisponible] = useState(false);
+  const [dispositivoId, setDispositivoId] = useState("");
+  const [dispositivos, setDispositivos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const usuario_id = 5; // ID del usuario, la idea es rescatarla de la sesion
+
+  useEffect(() => {
+    // Función para obtener todos los tableros de la API dependiendo del usuario
+    const fetchTableros = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`http://localhost:3001/api/tableros?usuario_id=${usuario_id}`);
+        
+        if (!response.ok) {
+          throw new Error(`Error al obtener tableros: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Formatear los datos para mostrarlos en el select
+        const tablerosFormateados = data.map(tablero => ({
+          id: `${tablero.id}`
+        }));
+        
+        setDispositivos(tablerosFormateados);
+        
+        // Seleccionar el primer tablero por defecto si hay alguno
+        if (tablerosFormateados.length > 0) {
+          setDispositivoId(tablerosFormateados[0].id);
+        }
+      } catch (error) {
+        console.error("Error al cargar los tableros:", error);
+        setDispositivoId("TB-001");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTableros();
+  }, []);
+
+  const handleCambioDispositivo = (e) => {
+    setDispositivoId(e.target.value);
+  }
 
   return (
     <aside className="w-full md:w-72 flex flex-col gap-6">
@@ -39,16 +82,36 @@ const SidebarDocente = () => {
         <h3 className="font-semibold text-sm">Estado del Dispositivo</h3>
         <p>
           Panel Tablero:{" "}
-          <span className="text-green-600 font-semibold">● Conectado</span>
+          <span className="text-green-600 font-semibold">
+            {loading ? "● Conectando..." : "● Conectado"}
+          </span>
         </p>
-        <p>
-          Última sincronización:{" "}
-          <span className="text-gray-600">Hace 5 minutos</span>
-        </p>
-        <p>
-          ID del dispositivo:{" "}
-          <span className="font-mono text-gray-800">TB-001</span>
-        </p>
+        <div className="flex flex-col mt-1">
+          <label htmlFor="dispositivoId" className="text-sm text-gray-700 mb-1">
+            Seleccionar tablero:
+          </label>
+          {loading ? (
+            <p className="text-xs text-gray-500">Cargando tableros...</p>
+          ) : (
+            <>
+              <select
+                id="dispositivoId"
+                value={dispositivoId}
+                onChange={handleCambioDispositivo}
+                className="font-mono text-gray-800 text-sm border border-gray-300 rounded p-1 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
+              >
+                {dispositivos.map((dispositivo) => (
+                  <option key={dispositivo.id} value={dispositivo.id}>
+                    {dispositivo.id}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs mt-1 text-gray-500">
+                Tópico actual: <span className="font-mono font-medium">{dispositivoId}</span>
+              </p>
+            </>
+          )}
+        </div>
       </div>
     </aside>
   );
