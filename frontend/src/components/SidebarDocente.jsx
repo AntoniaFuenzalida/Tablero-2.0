@@ -1,15 +1,46 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const SidebarDocente = () => {
   const [disponible, setDisponible] = useState(false);
-  const [dispositivoId, setDispositivoId] = useState("TB-001");
+  const [dispositivoId, setDispositivoId] = useState("");
+  const [dispositivos, setDispositivos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const usuario_id = 5; // ID del usuario, la idea es rescatarla de la sesion
 
-  //lista de dispositivos/topicos disponibles (la idea es que esto se conecte a la api)
-  const dispositivos = [
-    { id: "TB-001"},
-    { id: "TB-002"},
-    { id: "TB-003"},
-  ];
+  useEffect(() => {
+    // Función para obtener todos los tableros de la API dependiendo del usuario
+    const fetchTableros = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`http://localhost:3001/api/tableros?usuario_id=${usuario_id}`);
+        
+        if (!response.ok) {
+          throw new Error(`Error al obtener tableros: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Formatear los datos para mostrarlos en el select
+        const tablerosFormateados = data.map(tablero => ({
+          id: `TB-${tablero.id}`
+        }));
+        
+        setDispositivos(tablerosFormateados);
+        
+        // Seleccionar el primer tablero por defecto si hay alguno
+        if (tablerosFormateados.length > 0) {
+          setDispositivoId(tablerosFormateados[0].id);
+        }
+      } catch (error) {
+        console.error("Error al cargar los tableros:", error);
+        setDispositivoId("TB-001");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTableros();
+  }, []);
 
   const handleCambioDispositivo = (e) => {
     setDispositivoId(e.target.value);
@@ -51,27 +82,35 @@ const SidebarDocente = () => {
         <h3 className="font-semibold text-sm">Estado del Dispositivo</h3>
         <p>
           Panel Tablero:{" "}
-          <span className="text-green-600 font-semibold">● Conectado</span>
+          <span className="text-green-600 font-semibold">
+            {loading ? "● Conectando..." : "● Conectado"}
+          </span>
         </p>
         <div className="flex flex-col mt-1">
           <label htmlFor="dispositivoId" className="text-sm text-gray-700 mb-1">
             Seleccionar tablero:
           </label>
-          <select
-            id="dispositivoId"
-            value={dispositivoId}
-            onChange={handleCambioDispositivo}
-            className="font-mono text-gray-800 text-sm border border-gray-300 rounded p-1 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
-          >
-            {dispositivos.map((dispositivo) => (
-              <option key={dispositivo.id} value={dispositivo.id}>
-                {dispositivo.id}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs mt-1 text-gray-500">
-            Tópico actual: <span className="font-mono font-medium">{dispositivoId}</span>
-          </p>
+          {loading ? (
+            <p className="text-xs text-gray-500">Cargando tableros...</p>
+          ) : (
+            <>
+              <select
+                id="dispositivoId"
+                value={dispositivoId}
+                onChange={handleCambioDispositivo}
+                className="font-mono text-gray-800 text-sm border border-gray-300 rounded p-1 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
+              >
+                {dispositivos.map((dispositivo) => (
+                  <option key={dispositivo.id} value={dispositivo.id}>
+                    {dispositivo.id}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs mt-1 text-gray-500">
+                Tópico actual: <span className="font-mono font-medium">{dispositivoId}</span>
+              </p>
+            </>
+          )}
         </div>
       </div>
     </aside>
