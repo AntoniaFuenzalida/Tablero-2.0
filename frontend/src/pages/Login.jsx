@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useUser } from "../context/UserContext"; // ✅ Importa el contexto
+import { useUser } from "../context/UserContext"; 
 import logoUtalca from "../assets/logo-utalca.png";
 
 const Login = () => {
   const [correo, setCorreo] = useState("");
   const [contraseña, setContraseña] = useState("");
   const navigate = useNavigate();
-  const { fetchUserData } = useUser(); // ✅ Obtén la función del contexto
+  const { fetchUserData } = useUser(); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,10 +25,11 @@ const Login = () => {
         alert("Login exitoso");
         localStorage.setItem("token", data.token);
 
-        // ✅ Refresca la información del usuario en el contexto
+       
         await fetchUserData();
 
         const tokenPayload = JSON.parse(atob(data.token.split(".")[1])); // decodifica el JWT
+        localStorage.setItem("rol", tokenPayload.rol); 
 
         if (tokenPayload.rol === "admin") {
           navigate("/admin");
