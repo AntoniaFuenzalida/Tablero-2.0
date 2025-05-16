@@ -69,51 +69,66 @@ const registerUser = async (req, res) => {
   };
 
   
-  const updateUser = async (req, res) => {
-    const userId = req.user.id;
-    const { nombre, correo, departamento, oficina, contraseña } = req.body;
+const updateUser = async (req, res) => {
+  const userId = req.user.id;
+  const { nombre, correo, departamento, oficina, contraseña, disponible } = req.body;
 
-    try {
-      let query = 'UPDATE Usuario SET';
-      const params = [];
-      
-      if (nombre) {
-        query += ' nombre = ?,';
-        params.push(nombre);
-      }
+  try {
+    const updates = [];
+    const params = [];
 
-      if (correo) {
-        query += ' correo = ?,';
-        params.push(correo);
-      }
-          if (departamento) {
-      query += ' departamento = ?,';
-      params.push(departamento);
-      }
-
-      if (oficina) {
-        query += ' oficina = ?,';
-        params.push(oficina);
-      }
-
-      if (contraseña) {
-        const hashed = await bcrypt.hash(contraseña, 10);
-        query += ' contraseña = ?,';
-        params.push(hashed);
-      }
-
-      query = query.slice(0, -1);
-      query += ' WHERE id = ?';
-      params.push(userId);
-
-      await db.query(query, params);
-
-      res.json({ message: 'Usuario actualizado correctamente' });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Error al actualizar el usuario' });
+    if (nombre) {
+      updates.push("nombre = ?");
+      params.push(nombre);
     }
+
+    if (correo) {
+      updates.push("correo = ?");
+      params.push(correo);
+    }
+
+    if (departamento) {
+      updates.push("departamento = ?");
+      params.push(departamento);
+    }
+
+    if (oficina) {
+      updates.push("oficina = ?");
+      params.push(oficina);
+    }
+
+    if (contraseña) {
+      const hashed = await bcrypt.hash(contraseña, 10);
+      updates.push("contraseña = ?");
+      params.push(hashed);
+    }
+
+    if (disponible !== undefined) {
+      updates.push("disponible = ?");
+      params.push(disponible);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No se enviaron campos para actualizar' });
+    }
+
+    const query = `UPDATE Usuario SET ${updates.join(', ')} WHERE id = ?`;
+    params.push(userId);
+
+    console.log("QUERY:", query);
+    console.log("PARAMS:", params);
+
+    await db.query(query, params);
+
+    res.json({ message: 'Usuario actualizado correctamente' });
+  } catch (err) {
+    console.error("Error en updateUser:", err);
+    res.status(500).json({ error: 'Error al actualizar el usuario' });
+  }
 };
+
+
+
 
 
 module.exports = { registerUser, getUsers , loginUser , updateUser};

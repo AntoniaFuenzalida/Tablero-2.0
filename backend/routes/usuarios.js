@@ -25,7 +25,7 @@ router.put('/update', verifyToken, updateUser);
 router.get('/me', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(
-      'SELECT nombre, correo, departamento, oficina FROM Usuario WHERE id = ?',
+      'SELECT nombre, correo, departamento, oficina, disponible FROM Usuario WHERE id = ?',
       [req.user.id]
     );
 

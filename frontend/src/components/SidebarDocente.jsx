@@ -1,7 +1,43 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useUser } from "../context/UserContext";
 
 const SidebarDocente = () => {
+  const { usuario, fetchUserData } = useUser();
   const [disponible, setDisponible] = useState(false);
+
+  // Sincroniza el estado local con el valor actual del contexto
+  useEffect(() => {
+    if (usuario?.disponible !== undefined) {
+      setDisponible(usuario.disponible);
+    }
+  }, [usuario]);
+
+  const handleDisponibilidadChange = async () => {
+    const nuevoEstado = !disponible;
+    setDisponible(nuevoEstado);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch("http://localhost:3001/api/update", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ disponible: nuevoEstado }),
+      });
+
+      if (res.ok) {
+        fetchUserData(); // actualiza el contexto global
+      } else {
+        alert("Error al actualizar disponibilidad");
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      alert("Error de conexión con el servidor");
+    }
+  };
 
   return (
     <aside className="w-full md:w-72 flex flex-col gap-6">
@@ -10,9 +46,12 @@ const SidebarDocente = () => {
         <div className="w-16 h-16 bg-red-100 text-red-700 rounded-full flex items-center justify-center text-2xl font-bold">
           👤
         </div>
-        <h2 className="text-sm font-semibold text-gray-800">Profesor Ejemplo</h2>
+        <h2 className="text-sm font-semibold text-gray-800">
+          {usuario?.nombre || "Profesor"}
+        </h2>
         <p className="text-xs text-gray-500 text-center -mt-1">
-          Departamento de Matemáticas
+          Departamento de {usuario?.departamento || "N/D"} <br />
+          Oficina {usuario?.oficina || "N/D"}
         </p>
 
         <div className="mt-3 w-full">
@@ -21,13 +60,19 @@ const SidebarDocente = () => {
             <input
               type="checkbox"
               checked={disponible}
-              onChange={() => setDisponible(!disponible)}
+              onChange={handleDisponibilidadChange}
               className="ml-2 h-5 w-5 accent-red-600"
             />
           </label>
           <p className="text-xs mt-1 text-gray-600">
             Estado actual:{" "}
-            <span className={disponible ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+            <span
+              className={
+                disponible
+                  ? "text-green-600 font-semibold"
+                  : "text-red-600 font-semibold"
+              }
+            >
               {disponible ? "Disponible" : "No disponible"}
             </span>
           </p>

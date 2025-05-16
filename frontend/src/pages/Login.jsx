@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useUser } from "../context/UserContext"; // ✅ Importa el contexto
 import logoUtalca from "../assets/logo-utalca.png";
 
 const Login = () => {
   const [correo, setCorreo] = useState("");
   const [contraseña, setContraseña] = useState("");
   const navigate = useNavigate();
+  const { fetchUserData } = useUser(); // ✅ Obtén la función del contexto
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,20 +21,26 @@ const Login = () => {
 
       const data = await response.json();
 
-    if (response.ok) {
-      alert("Login exitoso");
-      localStorage.setItem("token", data.token);
+      if (response.ok) {
+        alert("Login exitoso");
+        localStorage.setItem("token", data.token);
 
-      const tokenPayload = JSON.parse(atob(data.token.split('.')[1])); // decodifica el JWT
+        // ✅ Refresca la información del usuario en el contexto
+        await fetchUserData();
 
-      if (tokenPayload.rol === "admin") {
-        navigate("/admin");
+        const tokenPayload = JSON.parse(atob(data.token.split(".")[1])); // decodifica el JWT
+
+        if (tokenPayload.rol === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/docente");
+        }
       } else {
-        navigate("/docente");
+        alert(data.error || "Credenciales incorrectas");
       }
-    }
     } catch (error) {
       alert("Error de conexión con el servidor");
+      console.error("Login error:", error);
     }
   };
 

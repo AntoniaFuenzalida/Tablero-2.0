@@ -8,6 +8,7 @@ CREATE TABLE Usuario (
   departamento VARCHAR(100),
   oficina VARCHAR(100),
   rol VARCHAR(20)
+  disponible BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE Tablero (
