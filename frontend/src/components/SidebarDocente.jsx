@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 
-const SidebarDocente = () => {
+
+const SidebarDocente = ({usuario}) => {
   const [disponible, setDisponible] = useState(false);
   const [dispositivoId, setDispositivoId] = useState("");
   const [dispositivos, setDispositivos] = useState([]);
@@ -9,6 +10,7 @@ const SidebarDocente = () => {
 
   useEffect(() => {
     // Función para obtener todos los tableros de la API dependiendo del usuario
+    console.log("usuario", usuario);
     const fetchTableros = async () => {
       setLoading(true);
       try {
@@ -53,10 +55,10 @@ const SidebarDocente = () => {
         <div className="w-16 h-16 bg-red-100 text-red-700 rounded-full flex items-center justify-center text-2xl font-bold">
           👤
         </div>
-        <h2 className="text-sm font-semibold text-gray-800">Profesor Ejemplo</h2>
-        <p className="text-xs text-gray-500 text-center -mt-1">
+        <h2 className="text-sm font-semibold text-gray-800">{usuario.nombre}</h2>
+        {/* <p className="text-xs text-gray-500 text-center -mt-1">
           Departamento de Matemáticas
-        </p>
+        </p> */}
 
         <div className="mt-3 w-full">
           <label className="flex items-center justify-between text-sm font-medium text-gray-700">

@@ -60,7 +60,9 @@ const registerUser = async (req, res) => {
         process.env.JWT_SECRET || "claveSecreta",
         { expiresIn: '1h' }
       );
-  
+      //Guardar el token en el localStorage del navegador
+      localStorage.setItem('token', token);
+      
       res.json({ message: 'Login exitoso', token });
     } catch (err) {
       console.error(err);

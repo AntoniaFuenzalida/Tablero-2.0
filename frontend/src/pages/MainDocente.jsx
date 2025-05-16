@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";import SidebarDocente from "../components/SidebarDocente";
+import { use, useEffect, useState } from "react";import SidebarDocente from "../components/SidebarDocente";
 import PanelMensajes from "../components/PanelMensajes";
 import HorarioAtencion from "../components/HorarioAtencion";
 import ConfiguracionCuenta from "../components/ConfiguracionCuenta";
@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 
 
 const MainDocente = () => {
+
   const [pestanaActiva, setPestanaActiva] = useState("mensajes");
 
   const navigate = useNavigate();
@@ -86,7 +87,7 @@ const MainDocente = () => {
       {/* Body */}
       <div className="flex flex-col md:flex-row gap-6 px-6 py-6">
         {/* Sidebar */}
-        <SidebarDocente />
+        <SidebarDocente usuario={usuario} />
 
         {/* Panel central */}
         <div className="flex-1 space-y-4">
