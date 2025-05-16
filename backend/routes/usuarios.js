@@ -62,5 +62,46 @@ router.put('/cambiar-contrasena', verifyToken, async (req, res) => {
   }
 });
 
+router.post('/horario', verifyToken, async (req, res) => {
+  const userId = req.user.id;
+  const horarios = req.body.horarios;
+
+  try {
+    // Elimina los horarios anteriores del usuario
+    await db.query('DELETE FROM DiaAtencion WHERE usuario_id = ?', [userId]);
+
+    // Inserta los nuevos horarios activos
+    for (const h of horarios) {
+      if (h.activo) {
+        await db.query(
+          'INSERT INTO DiaAtencion (diaSemana, hora, horaFin, usuario_id) VALUES (?, ?, ?, ?)',
+          [h.dia, h.inicio, h.fin, userId]
+        );
+      }
+    }
+
+    res.json({ message: 'Horario guardado correctamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al guardar horario' });
+  }
+});
+
+router.get('/horario', verifyToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const [rows] = await db.query(
+      'SELECT diaSemana, hora, horaFin FROM DiaAtencion WHERE usuario_id = ?',
+      [userId]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener horarios' });
+  }
+});
+
 
 module.exports = router;
