@@ -11,6 +11,7 @@ const MainDocente = () => {
   const [usuario, setUsuario] = useState({ nombre: "", departamento: "" });
   const [mostrarNotificaciones, setMostrarNotificaciones] = useState(false);
   const [notificaciones, setNotificaciones] = useState([]);
+  const [historialNotificaciones, setHistorialNotificaciones] = useState([]);
 
   const navigate = useNavigate();
 
@@ -63,10 +64,38 @@ const MainDocente = () => {
     }
   };
 
+  const fetchHistorialNotificaciones = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const res = await fetch("http://localhost:3001/api/notificaciones/historial", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setHistorialNotificaciones(data);
+      } else {
+        console.warn("Token inválido al obtener historial de notificaciones");
+      }
+    } catch (err) {
+      console.error("Error al obtener historial de notificaciones:", err);
+    }
+  };
+
   useEffect(() => {
     fetchUsuario();
     fetchNotificaciones();
   }, []);
+
+  useEffect(() => {
+    if (pestanaActiva === "notificaciones") {
+      fetchHistorialNotificaciones();
+    }
+  }, [pestanaActiva]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -77,7 +106,11 @@ const MainDocente = () => {
 
   const actualizarNotificaciones = () => {
     fetchNotificaciones();
+    if (pestanaActiva === "notificaciones") {
+      fetchHistorialNotificaciones();
+    }
   };
+
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -90,7 +123,6 @@ const MainDocente = () => {
         </div>
 
         <div className="flex items-center gap-4 relative">
-          {/* Campana de notificaciones */}
           <div className="relative">
             <button
               onClick={() => setMostrarNotificaciones(!mostrarNotificaciones)}
@@ -165,7 +197,6 @@ const MainDocente = () => {
             )}
           </div>
 
-          {/* Perfil */}
           <div className="flex items-center gap-2">
             <img
               src="https://ui-avatars.com/api/?name=Profesor+Ejemplo&background=be123c&color=fff"
@@ -215,7 +246,39 @@ const MainDocente = () => {
             {pestanaActiva === "horario" && <HorarioAtencion />}
             {pestanaActiva === "configuracion" && <ConfiguracionCuenta />}
             {pestanaActiva === "notificaciones" && (
-              <p className="text-gray-600">Aquí irán las notificaciones.</p>
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold text-gray-800">Historial de Notificaciones</h2>
+                {historialNotificaciones.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No hay notificaciones registradas.</p>
+                ) : (
+                  <ul className="divide-y divide-gray-200 text-sm">
+                    {historialNotificaciones.map((n) => (
+                      <li key={n.id} className="py-2">
+                        <div className="flex justify-between items-center">
+                          <p className="font-medium text-gray-700">{n.mensaje}</p>
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full ${
+                              n.leida ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                            }`}
+                          >
+                            {n.leida ? "Leída" : "No leída"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500">{new Date(n.fecha).toLocaleString("es-CL", {
+                                    timeZone: "America/Santiago",
+                                    weekday: "long",
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             )}
           </div>
         </div>

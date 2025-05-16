@@ -127,6 +127,23 @@ router.put('/notificaciones/:id/leida', verifyToken, async (req, res) => {
   }
 });
 
+router.get('/notificaciones/historial', verifyToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const [rows] = await db.query(
+      'SELECT id, mensaje, tipo, leida, fecha FROM Notificacion WHERE usuarioId = ? ORDER BY fecha DESC',
+      [userId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener historial de notificaciones' });
+  }
+});
+
+
+
 
 
 module.exports = router;

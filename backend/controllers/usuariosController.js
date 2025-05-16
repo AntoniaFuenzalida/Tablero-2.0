@@ -120,7 +120,7 @@ const updateUser = async (req, res) => {
     if (disponible !== undefined) {
       const mensaje = `Tu estado de disponibilidad fue cambiado a: ${disponible ? 'Disponible' : 'No disponible'}`;
       await db.query(
-        'INSERT INTO Notificacion (usuarioId, mensaje, tipo) VALUES (?, ?, ?)',
+        'INSERT INTO Notificacion (usuarioId, mensaje, tipo, fecha) VALUES (?, ?, ?, NOW())',
         [userId, mensaje, 'disponibilidad']
       );
     }
