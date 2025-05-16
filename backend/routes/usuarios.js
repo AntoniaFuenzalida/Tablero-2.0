@@ -11,8 +11,6 @@ const {
 const verifyToken = require('../controllers/authMiddleware'); 
 const bcrypt = require('bcrypt');
 
-
-
 // Rutas públicas
 router.get('/users', getUsers);
 router.post('/register', registerUser);
@@ -21,7 +19,7 @@ router.post('/login', loginUser);
 // Rutas protegidas
 router.put('/update', verifyToken, updateUser);
 
-//Ruta apra obtener datos del usuario autenticado
+// Ruta para obtener datos del usuario autenticado
 router.get('/me', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -40,8 +38,6 @@ router.get('/me', verifyToken, async (req, res) => {
 });
 
 router.put('/cambiar-contrasena', verifyToken, async (req, res) => {
-    console.log("Ruta cambiar-contrasena activa");
-
   const { actual, nueva } = req.body;
   const userId = req.user.id;
 
@@ -67,10 +63,8 @@ router.post('/horario', verifyToken, async (req, res) => {
   const horarios = req.body.horarios;
 
   try {
-    // Elimina los horarios anteriores del usuario
     await db.query('DELETE FROM DiaAtencion WHERE usuario_id = ?', [userId]);
 
-    // Inserta los nuevos horarios activos
     for (const h of horarios) {
       if (h.activo) {
         await db.query(
@@ -102,6 +96,37 @@ router.get('/horario', verifyToken, async (req, res) => {
     res.status(500).json({ error: 'Error al obtener horarios' });
   }
 });
+
+router.get('/notificaciones', verifyToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const [rows] = await db.query(
+      'SELECT id, mensaje, tipo, leida, fecha FROM Notificacion WHERE usuarioId = ? AND leida = FALSE ORDER BY fecha DESC',
+      [userId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener notificaciones' });
+  }
+});
+
+router.put('/notificaciones/:id/leida', verifyToken, async (req, res) => {
+  const notificacionId = req.params.id;
+
+  try {
+    await db.query(
+      'UPDATE Notificacion SET leida = TRUE WHERE id = ?',
+      [notificacionId]
+    );
+    res.json({ message: 'Notificación marcada como leída' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al marcar notificación como leída' });
+  }
+});
+
 
 
 module.exports = router;

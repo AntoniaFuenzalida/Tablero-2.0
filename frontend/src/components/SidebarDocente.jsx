@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useUser } from "../context/UserContext";
 
-const SidebarDocente = () => {
+const SidebarDocente = ({ onDisponibilidadCambiada }) => {
   const { usuario, fetchUserData } = useUser();
   const [disponible, setDisponible] = useState(false);
 
@@ -30,9 +30,14 @@ const SidebarDocente = () => {
 
       if (res.ok) {
         fetchUserData(); // actualiza el contexto global
+        if (onDisponibilidadCambiada) {
+          onDisponibilidadCambiada(); // 🔔 actualiza las notificaciones al instante
+        }
+
       } else {
         alert("Error al actualizar disponibilidad");
       }
+
     } catch (err) {
       console.error("Error:", err);
       alert("Error de conexión con el servidor");

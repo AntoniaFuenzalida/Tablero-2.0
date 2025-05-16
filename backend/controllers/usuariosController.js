@@ -115,10 +115,16 @@ const updateUser = async (req, res) => {
     const query = `UPDATE Usuario SET ${updates.join(', ')} WHERE id = ?`;
     params.push(userId);
 
-    console.log("QUERY:", query);
-    console.log("PARAMS:", params);
-
     await db.query(query, params);
+
+    if (disponible !== undefined) {
+      const mensaje = `Tu estado de disponibilidad fue cambiado a: ${disponible ? 'Disponible' : 'No disponible'}`;
+      await db.query(
+        'INSERT INTO Notificacion (usuarioId, mensaje, tipo) VALUES (?, ?, ?)',
+        [userId, mensaje, 'disponibilidad']
+      );
+    }
+
 
     res.json({ message: 'Usuario actualizado correctamente' });
   } catch (err) {
@@ -126,6 +132,7 @@ const updateUser = async (req, res) => {
     res.status(500).json({ error: 'Error al actualizar el usuario' });
   }
 };
+
 
 
 
