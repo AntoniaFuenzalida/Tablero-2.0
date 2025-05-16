@@ -1,14 +1,6 @@
 import React, { useState } from "react";
 
-const docentesEjemplo = [
-  "María Rodríguez",
-  "Juan Pérez",
-  "Ana Gómez",
-  "Carlos Sánchez",
-  "Laura Martínez",
-];
-
-const PanelGestionDispositivos = () => {
+const PanelGestionDispositivos = ({ docentes = [] }) => {
   const [dispositivos, setDispositivos] = useState([
     {
       id: "TB-001",
@@ -133,9 +125,9 @@ const PanelGestionDispositivos = () => {
                   }
                 >
                   <option value="">Selecciona un docente</option>
-                  {docentesEjemplo.map((docente, idx) => (
-                    <option key={idx} value={docente}>
-                      {docente}
+                  {docentes.map((docente, idx) => (
+                    <option key={idx} value={docente.nombre}>
+                      {docente.nombre} - {docente.correo}
                     </option>
                   ))}
                 </select>

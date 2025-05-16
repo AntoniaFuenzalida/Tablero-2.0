@@ -78,7 +78,10 @@ const MainAdmin = () => {
           />
         )}
 
-        {selected === "dispositivos" && <PanelGestionDispositivos />}
+        {selected === "dispositivos" && (
+          <PanelGestionDispositivos docentes={docentes} />
+        )}
+
         {selected === "ayuda" && <p>Sección de ayuda</p>}
       </div>
     </div>

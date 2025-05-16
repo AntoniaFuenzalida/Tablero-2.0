@@ -21,7 +21,7 @@ const PanelGestionDocentes = ({ docentes, recargarDocentes }) => {
             <tr>
               <th className="px-4 py-2">Nombre</th>
               <th className="px-4 py-2">Departamento</th>
-              <th className="px-4 py-2">Estado</th>
+              <th className="px-4 py-2">Estado usuario</th>
               <th className="px-4 py-2">Oficina</th>
               <th className="px-4 py-2">Acciones</th>
             </tr>
