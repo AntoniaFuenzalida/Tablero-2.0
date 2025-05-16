@@ -2,6 +2,7 @@ const db = require('../db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+// Obtener todos los usuarios
 const getUsers = async (req, res) => {
   try {
     const [rows] = await db.query('SELECT * FROM Usuario');
@@ -11,64 +12,79 @@ const getUsers = async (req, res) => {
   }
 };
 
+// Registrar nuevo usuario
 const registerUser = async (req, res) => {
-    const { nombre, correo, contraseña, rol } = req.body;
-  
-    if (!nombre || !correo || !contraseña)
-      return res.status(400).json({ error: 'Todos los campos son obligatorios' });
-  
-    try {
-      const [existing] = await db.query('SELECT id FROM Usuario WHERE correo = ?', [correo]);
-      if (existing.length > 0) {
-        return res.status(409).json({ error: 'El usuario ya existe' });
-      }
-  
-      const hashedPassword = await bcrypt.hash(contraseña, 10);
-  
-      await db.query(
-        'INSERT INTO Usuario (nombre, correo, contraseña, rol) VALUES (?, ?, ?, ?)',
-        [nombre, correo, hashedPassword, rol]
-      );
-  
-      res.status(201).json({ message: 'Usuario registrado exitosamente' });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Error interno del servidor' });
-    }
-  };
+  const { nombre, correo, contraseña, rol } = req.body;
 
-  const loginUser = async (req, res) => {
-    const { correo, contraseña } = req.body;
-  
-    if (!correo || !contraseña)
-      return res.status(400).json({ error: 'Email y contraseña son requeridos' });
-  
-    try {
-      const [users] = await db.query('SELECT * FROM Usuario WHERE correo = ?', [correo]);
-      if (users.length === 0)
-        return res.status(401).json({ error: 'Usuario no encontrado' });
-  
-      const user = users[0];
-      const isMatch = await bcrypt.compare(contraseña, user.contraseña);
-  
-      if (!isMatch)
-        return res.status(401).json({ error: 'Contraseña incorrecta' });
-  
+  if (!nombre || !correo || !contraseña)
+    return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+
+  try {
+    const [existing] = await db.query('SELECT id FROM Usuario WHERE correo = ?', [correo]);
+    if (existing.length > 0) {
+      return res.status(409).json({ error: 'El usuario ya existe' });
+    }
+
+    const hashedPassword = await bcrypt.hash(contraseña, 10);
+
+    await db.query(
+      'INSERT INTO Usuario (nombre, correo, contraseña, rol) VALUES (?, ?, ?, ?)',
+      [nombre, correo, hashedPassword, rol]
+    );
+
+    res.status(201).json({ message: 'Usuario registrado exitosamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+// Iniciar sesión (y marcar como disponible)
+const loginUser = async (req, res) => {
+  const { correo, contraseña } = req.body;
+
+  if (!correo || !contraseña)
+    return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+
+  try {
+    const [users] = await db.query('SELECT * FROM Usuario WHERE correo = ?', [correo]);
+    if (users.length === 0)
+      return res.status(401).json({ error: 'Usuario no encontrado' });
+
+    const user = users[0];
+    const isMatch = await bcrypt.compare(contraseña, user.contraseña);
+
+    if (!isMatch)
+      return res.status(401).json({ error: 'Contraseña incorrecta' });
+
+    await db.query('UPDATE Usuario SET disponible = 1 WHERE id = ?', [user.id]);
+
     const token = jwt.sign(
       { id: user.id, nombre: user.nombre, correo: user.correo, rol: user.rol },
+      process.env.JWT_SECRET || "claveSecreta",
+      { expiresIn: '1h' }
+    );
 
-        process.env.JWT_SECRET || "claveSecreta",
-        { expiresIn: '1h' }
-      );
-  
-      res.json({ message: 'Login exitoso', token });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Error interno del servidor' });
-    }
-  };
+    res.json({ message: 'Login exitoso', token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
 
-  
+// Cerrar sesión (opcional) => marcar como no disponible
+const logoutUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    await db.query('UPDATE Usuario SET disponible = 0 WHERE id = ?', [userId]);
+    res.json({ message: 'Sesión cerrada correctamente' });
+  } catch (err) {
+    console.error("Error al cerrar sesión:", err);
+    res.status(500).json({ error: 'Error al cerrar sesión' });
+  }
+};
+
+// Actualizar datos del usuario
 const updateUser = async (req, res) => {
   const userId = req.user.id;
   const { nombre, correo, departamento, oficina, contraseña, disponible } = req.body;
@@ -125,7 +141,6 @@ const updateUser = async (req, res) => {
       );
     }
 
-
     res.json({ message: 'Usuario actualizado correctamente' });
   } catch (err) {
     console.error("Error en updateUser:", err);
@@ -133,9 +148,10 @@ const updateUser = async (req, res) => {
   }
 };
 
-
-
-
-
-
-module.exports = { registerUser, getUsers , loginUser , updateUser};
+module.exports = {
+  registerUser,
+  getUsers,
+  loginUser,
+  updateUser,
+  logoutUser // nuevo
+};

@@ -7,6 +7,7 @@ const {
   registerUser,
   loginUser,
   updateUser,
+  logoutUser,
 } = require('../controllers/usuariosController');
 const verifyToken = require('../controllers/authMiddleware'); 
 const bcrypt = require('bcrypt');
@@ -15,6 +16,8 @@ const bcrypt = require('bcrypt');
 router.get('/users', getUsers);
 router.post('/register', registerUser);
 router.post('/login', loginUser);
+router.post('/logout', verifyToken, logoutUser);
+
 
 // Rutas protegidas
 router.put('/update', verifyToken, updateUser);
@@ -142,7 +145,29 @@ router.get('/notificaciones/historial', verifyToken, async (req, res) => {
   }
 });
 
+router.get('/docentes', verifyToken, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      'SELECT id, nombre, correo, departamento, oficina, disponible FROM Usuario WHERE rol = "docente" AND disponible = 1'
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener docentes conectados' });
+  }
+});
 
+router.get('/docentes/conectados', verifyToken, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      'SELECT id, nombre, correo, departamento, oficina, disponible FROM Usuario WHERE rol = "docente" AND disponible = 1'
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener docentes conectados' });
+  }
+});
 
 
 

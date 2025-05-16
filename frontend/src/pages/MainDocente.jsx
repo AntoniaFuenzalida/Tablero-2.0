@@ -15,10 +15,26 @@ const MainDocente = () => {
 
   const navigate = useNavigate();
 
-  const cerrarSesion = () => {
+  const cerrarSesion = async () => {
+    const token = localStorage.getItem("token");
+
+    try {
+      await fetch("http://localhost:3001/api/logout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (err) {
+      console.error("Error al cerrar sesión:", err);
+    }
+
+   localStorage.setItem("logout-event", Date.now());
+
     localStorage.removeItem("token");
     navigate("/login");
   };
+
 
   const fetchUsuario = async () => {
     const token = localStorage.getItem("token");

@@ -5,7 +5,7 @@ import Registro from "./pages/Registro";
 import MainDocente from "./pages/MainDocente";
 import MainAdmin from "./pages/MainAdmin";
 import { UserProvider } from "./context/UserContext";
-import RutaProtegida from "./components/RutaProtegida"; // ✅ Importa el protector
+import RutaProtegida from "./components/RutaProtegida"; 
 
 function App() {
   return (

@@ -23,14 +23,20 @@ const Login = () => {
 
       if (response.ok) {
         alert("Login exitoso");
+
+        // Guardamos el token
         localStorage.setItem("token", data.token);
 
-       
+        // Obtenemos los datos del usuario desde el contexto
         await fetchUserData();
+      
+        localStorage.setItem("login-event", Date.now());
 
-        const tokenPayload = JSON.parse(atob(data.token.split(".")[1])); // decodifica el JWT
-        localStorage.setItem("rol", tokenPayload.rol); 
+        // Decodificamos el token para obtener el rol
+        const tokenPayload = JSON.parse(atob(data.token.split(".")[1]));
+        localStorage.setItem("rol", tokenPayload.rol);
 
+        // Navegamos según el rol
         if (tokenPayload.rol === "admin") {
           navigate("/admin");
         } else {
