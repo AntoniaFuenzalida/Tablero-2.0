@@ -17,7 +17,7 @@ const PanelMensajes = ({ tableroId }) => {
   
   const fetchMensajes = useCallback(async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/mensajes/2"); 
+      const response = await fetch(`http://localhost:3001/api/mensajes/${tableroId}`); 
       const data = await response.json();
       setMensajes(data.map((msg) => TableroCadenasTexto.fromJSON(msg))); // Convertir JSON a instancias de TableroCadenasTexto
     } catch (error) {
@@ -26,12 +26,12 @@ const PanelMensajes = ({ tableroId }) => {
         "Error al obtener los mensajes: No se pudo conectar con el servidor."
       );
     }
-  }, []);
+  }, [tableroId]); // Dependencia del tableroId
   
   // Enviar un nuevo mensaje al servidor
   const enviarMensaje = async (texto) => {
     try {
-      const response = await fetch("http://localhost:3001/api/mensajes/2", {
+      const response = await fetch(`http://localhost:3001/api/mensajes/${tableroId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -54,7 +54,7 @@ const PanelMensajes = ({ tableroId }) => {
   const editarMensaje = async (mensajeId, nuevoTexto) => {
     try {
       const response = await fetch(
-        `http://localhost:3001/api/mensajes/${mensajeId}`,
+        `http://localhost:3001/api/mensajes/${tableroId}/${mensajeId}`,
         {
           method: "PUT",
           headers: {
@@ -78,7 +78,7 @@ const PanelMensajes = ({ tableroId }) => {
   const eliminarMensaje = async (mensajeId) => {
     try {
       const response = await fetch(
-        `http://localhost:3001/api/mensajes/1/${mensajeId}`,
+        `http://localhost:3001/api/mensajes/${tableroId}/${mensajeId}`,
         {
           method: "DELETE",
         }

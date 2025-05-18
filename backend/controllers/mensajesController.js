@@ -1,21 +1,16 @@
 const db = require('../db');
 
-// obtener mensajes de un usuario por id de usuario
+// Obtener mensajes por id del tablero
 const getMensajes = async (req, res) => {
-    const { id } = req.params; // id del usuario
+    const { id_tablero } = req.params;
 
     try {
         const query = `
-            SELECT 
-                tc.texto, 
-                tc.id AS id, 
-                t.id AS tablero_id
-            FROM TableroCadenasTexto tc
-            INNER JOIN Tablero t ON tc.tablero_id = t.id
-            INNER JOIN Usuario u ON t.usuario_id = u.id
-            WHERE t.usuario_id = ?
+            SELECT texto, id
+            FROM TableroCadenasTexto
+            WHERE tablero_id = ?
         `;
-        const [rows] = await db.query(query, [id]);
+        const [rows] = await db.query(query, [id_tablero]);
 
         res.status(200).json(rows); // Devuelve los mensajes encontrados
     } catch (err) {
@@ -24,19 +19,17 @@ const getMensajes = async (req, res) => {
     }
 };
 
-// agregar un mensaje a un usuario por id de usuario
+// Agregar un mensaje a un tablero específico
 const addMensaje = async (req, res) => {
-    const { id } = req.params; // id del usuario
-    const { texto } = req.body; // mensaje a agregar
+    const { id_tablero } = req.params;
+    const { texto } = req.body;
 
     try {
         const query = `
             INSERT INTO TableroCadenasTexto (tablero_id, texto)
-            SELECT t.id, ?
-            FROM Tablero t
-            WHERE t.usuario_id = ?
+            VALUES (?, ?)
         `;
-        await db.query(query, [texto, id]);
+        await db.query(query, [id_tablero, texto]);
 
         res.status(201).json({ message: 'Mensaje agregado correctamente' });
     } catch (err) {
@@ -45,20 +38,16 @@ const addMensaje = async (req, res) => {
     }
 };
 
-// eliminar un mensaje de un usuario por id de usuario y id de mensaje
+// Eliminar un mensaje por id del mensaje y id del tablero
 const deleteMensaje = async (req, res) => {
-    const { id_usuario, id_mensaje } = req.params; // id del usuario e id del mensaje
+    const { id_tablero, id_mensaje } = req.params;
 
     try {
         const query = `
-            DELETE FROM TableroCadenasTexto 
-            WHERE id = ? AND tablero_id = (
-                SELECT t.id 
-                FROM Tablero t 
-                WHERE t.usuario_id = ?
-            )
+            DELETE FROM TableroCadenasTexto
+            WHERE id = ? AND tablero_id = ?
         `;
-        const [result] = await db.query(query, [id_mensaje, id_usuario]);
+        const [result] = await db.query(query, [id_mensaje, id_tablero]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: "Mensaje no encontrado" });
@@ -71,18 +60,22 @@ const deleteMensaje = async (req, res) => {
     }
 };
 
-// Editar un mensaje por id
+// Editar un mensaje por id del mensaje y del tablero
 const editMensaje = async (req, res) => {
-    const { id_mensaje } = req.params; // id del mensaje
-    const { texto } = req.body; // nuevo texto del mensaje
+    const { id_tablero, id_mensaje } = req.params;
+    const { texto } = req.body;
 
     try {
         const query = `
-            UPDATE TableroCadenasTexto 
-            SET texto = ? 
-            WHERE id = ?
+            UPDATE TableroCadenasTexto
+            SET texto = ?
+            WHERE id = ? AND tablero_id = ?
         `;
-        await db.query(query, [texto, id_mensaje]);
+        const [result] = await db.query(query, [texto, id_mensaje, id_tablero]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "Mensaje no encontrado o no pertenece al tablero" });
+        }
 
         res.status(200).json({ message: "Mensaje editado correctamente" });
     } catch (err) {

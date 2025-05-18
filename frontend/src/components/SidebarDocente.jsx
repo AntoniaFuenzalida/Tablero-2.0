@@ -5,7 +5,9 @@ const SidebarDocente = ({ onTableroSeleccionado }) => {
   const [dispositivoId, setDispositivoId] = useState("");
   const [dispositivos, setDispositivos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const usuario_id = 5; // ID del usuario, la idea es rescatarla de la sesion
+  // !!!! es importente tener que cambiar esto
+  // ID del usuario, Estatica pero la id que se sea reactiva
+  const usuario_id = 2; 
 
   useEffect(() => {
     // Función para obtener todos los tableros de la API dependiendo del usuario
