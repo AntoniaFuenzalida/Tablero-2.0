@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";import SidebarDocente from "../components/SidebarDocente";
+import { useEffect, useState } from "react";
+import SidebarDocente from "../components/SidebarDocente";
 import PanelMensajes from "../components/PanelMensajes";
 import HorarioAtencion from "../components/HorarioAtencion";
 import ConfiguracionCuenta from "../components/ConfiguracionCuenta";
@@ -8,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 
 const MainDocente = () => {
   const [pestanaActiva, setPestanaActiva] = useState("mensajes");
+  const [tableroSeleccionado, setTableroSeleccionado] = useState("");
 
   const navigate = useNavigate();
 
@@ -83,10 +85,9 @@ const MainDocente = () => {
         </div>
       </header>
 
-      {/* Body */}
-      <div className="flex flex-col md:flex-row gap-6 px-6 py-6">
+      {/* Body */}      <div className="flex flex-col md:flex-row gap-6 px-6 py-6">
         {/* Sidebar */}
-        <SidebarDocente />
+        <SidebarDocente onTableroSeleccionado={setTableroSeleccionado} />
 
         {/* Panel central */}
         <div className="flex-1 space-y-4">
@@ -114,7 +115,7 @@ const MainDocente = () => {
 
           {/* Contenido según pestaña */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            {pestanaActiva === "mensajes" && <PanelMensajes />}
+            {pestanaActiva === "mensajes" && <PanelMensajes tableroId={tableroSeleccionado} />}
             {pestanaActiva === "horario" && <HorarioAtencion />}
             {pestanaActiva === "configuracion" && <ConfiguracionCuenta />}
             {pestanaActiva === "notificaciones" && (

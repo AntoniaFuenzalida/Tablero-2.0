@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Trash2, CheckCircle, Plus } from "lucide-react";
 import mqtt from "mqtt";
 import TableroCadenasTexto from "../classes/TableroCadenasTexto";
 
-const PanelMensajes = () => {
+const PanelMensajes = ({ tableroId }) => {
   const [mensajeActual, setMensajeActual] = useState(null); // Referencia al mensaje seleccionado
   const [mensajes, setMensajes] = useState([]); // Lista de TableroCadenasTexto
   const [nuevoMensaje, setNuevoMensaje] = useState("");
@@ -13,14 +13,11 @@ const PanelMensajes = () => {
   const [client, setClient] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState("Desconectado");
 
-
-
-  const mqttTopic = "tablero/001";
-
-  // Obtener los mensajes del servidor
-  const fetchMensajes = async () => {
+  const mqttTopic = `${tableroId}`;  // Topico MQTT basado en el tablero seleccionado
+  
+  const fetchMensajes = useCallback(async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/mensajes/2"); // modificar el 1 donde realmente deberia de ir el id del tablero
+      const response = await fetch("http://localhost:3001/api/mensajes/2"); 
       const data = await response.json();
       setMensajes(data.map((msg) => TableroCadenasTexto.fromJSON(msg))); // Convertir JSON a instancias de TableroCadenasTexto
     } catch (error) {
@@ -29,12 +26,12 @@ const PanelMensajes = () => {
         "Error al obtener los mensajes: No se pudo conectar con el servidor."
       );
     }
-  };
-
+  }, []);
+  
   // Enviar un nuevo mensaje al servidor
   const enviarMensaje = async (texto) => {
     try {
-      const response = await fetch("http://localhost:3001/api/mensajes/2", {// modificar el 1 donde realmente deberia de ir el id del tablero
+      const response = await fetch("http://localhost:3001/api/mensajes/2", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -77,12 +74,11 @@ const PanelMensajes = () => {
       );
     }
   };
-
   // Eliminar un mensaje del servidor
   const eliminarMensaje = async (mensajeId) => {
     try {
       const response = await fetch(
-        `http://localhost:3001/api/mensajes/1/${mensajeId}`,//corregir el 1 ya que deberi ade ir la id del tablero
+        `http://localhost:3001/api/mensajes/1/${mensajeId}`,
         {
           method: "DELETE",
         }
@@ -100,15 +96,24 @@ const PanelMensajes = () => {
       );
     }
   };
-
+  
   // Conexión con MQTT
   useEffect(() => {
-    const brokerUrl = "ws://172.27.208.1:9001"; // Reemplaza con la URL de tu broker MQTT/reemplazar por la ip que corresponde al servidor GCP
+    const brokerUrl = "ws://192.168.1.9:9001"; // Reemplaza con la URL de tu broker MQTT/reemplazar por la ip que corresponde al servidor GCP
     const mqttClient = mqtt.connect(brokerUrl);
 
     mqttClient.on("connect", () => {
       console.log("[MQTT] Conectado al broker");
       setConnectionStatus("Conectado");
+      
+      // Suscribirse al tópico del tablero seleccionado
+      mqttClient.subscribe(mqttTopic, { qos: 0 }, (err) => {
+        if (err) {
+          console.error(`[MQTT] Error al suscribirse a ${mqttTopic}:`, err);
+        } else {
+          console.log(`[MQTT] Suscrito a ${mqttTopic}`);
+        }
+      });
     });
 
     mqttClient.on("error", (err) => {
@@ -124,19 +129,24 @@ const PanelMensajes = () => {
     setClient(mqttClient);
 
     return () => {
-      if (mqttClient) mqttClient.end();
+      if (mqttClient) {
+        // Desuscribirse del tópico antes de desconectar
+        mqttClient.unsubscribe(mqttTopic);
+        mqttClient.end();
+      }
     };
-  }, []);
-
+  }, [mqttTopic]); // Reconectar cuando cambie el tópico MQTT
   const publicarMensaje = (msg) => {
     if (client && client.connected) {
       client.publish(mqttTopic, msg.texto, { qos: 0 }, (err) => {
         if (err) {
-          console.error("[MQTT] Error al publicar:", err);
+          console.error(`[MQTT] Error al publicar en ${mqttTopic}:`, err);
         } else {
-          console.log("[MQTT] Mensaje publicado:", msg);
+          console.log(`[MQTT] Mensaje publicado en ${mqttTopic}:`, msg.texto);
         }
       });
+    } else {
+      console.warn("[MQTT] No se pudo publicar el mensaje: Cliente no conectado");
     }
   };
 
@@ -147,21 +157,19 @@ const PanelMensajes = () => {
     enviarMensaje(nuevoMensaje);
     setNuevoMensaje("");
   };
-
   // Seleccionar un mensaje como el actual (ligado directamente)
   const seleccionarMensaje = (msg) => {
     setMensajeActual(msg); // Referencia directa al mensaje en la lista
     publicarMensaje(msg);
   };
-
+  
   useEffect(() => {
     fetchMensajes();
-  }, []);
+  }, [fetchMensajes]); // fetchMensajes ya depende de tableroId
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      {/* MENSAJE ACTUAL */}
-      <div className="bg-white border-l-4 border-red-500 p-4 rounded shadow">
+      {/* MENSAJE ACTUAL */}      <div className="bg-white border-l-4 border-red-500 p-4 rounded shadow">
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-red-600 font-bold flex items-center gap-2">
             <CheckCircle className="h-5 w-5 text-green-500" />
@@ -215,9 +223,9 @@ const PanelMensajes = () => {
             {mensajeActual ? mensajeActual.texto : "No hay mensaje seleccionado"}
           </p>
         )}
-        <p className="text-xs text-gray-500 mt-2">
-          Estado MQTT: <span className="font-semibold">{connectionStatus}</span>
-        </p>
+        <div className="mt-2 text-xs text-gray-500 flex flex-col">
+          <p>Estado MQTT: <span className="font-semibold">{connectionStatus}</span></p>
+        </div>
       </div>
 
       {/* MENSAJES PERSONALIZADOS */}

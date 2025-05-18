@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const SidebarDocente = () => {
+const SidebarDocente = ({ onTableroSeleccionado }) => {
   const [disponible, setDisponible] = useState(false);
   const [dispositivoId, setDispositivoId] = useState("");
   const [dispositivos, setDispositivos] = useState([]);
@@ -26,10 +26,14 @@ const SidebarDocente = () => {
         }));
         
         setDispositivos(tablerosFormateados);
-        
-        // Seleccionar el primer tablero por defecto si hay alguno
+          // Seleccionar el primer tablero por defecto si hay alguno
         if (tablerosFormateados.length > 0) {
-          setDispositivoId(tablerosFormateados[0].id);
+          const primerTableroId = tablerosFormateados[0].id;
+          setDispositivoId(primerTableroId);
+          // Notificar al componente padre sobre el tablero seleccionado por defecto
+          if (onTableroSeleccionado) {
+            onTableroSeleccionado(primerTableroId);
+          }
         }
       } catch (error) {
         console.error("Error al cargar los tableros:", error);
@@ -37,13 +41,15 @@ const SidebarDocente = () => {
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchTableros();
-  }, []);
-
+    };    fetchTableros();
+  }, [onTableroSeleccionado]);
   const handleCambioDispositivo = (e) => {
-    setDispositivoId(e.target.value);
+    const nuevoTableroId = e.target.value;
+    setDispositivoId(nuevoTableroId);
+    // Notificar al componente padre sobre el cambio
+    if (onTableroSeleccionado) {
+      onTableroSeleccionado(nuevoTableroId);
+    }
   }
 
   return (
