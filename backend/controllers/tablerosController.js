@@ -89,14 +89,32 @@ const updateTablero = async (req, res) => {
  */
 const deleteTablero = async (req, res) => {
   try {
-    const [result] = await db.query('DELETE FROM Tablero WHERE id = ?', [req.params.id]);
+    // Primero verificamos que el tablero exista
+    const [tableroExiste] = await db.query('SELECT id FROM Tablero WHERE id = ?', [req.params.id]);
     
-    if (result.affectedRows === 0) {
+    if (tableroExiste.length === 0) {
       return res.status(404).json({ error: 'Tablero no encontrado' });
     }
     
+    // Comenzamos una transacción para asegurar la integridad de los datos
+    await db.query('START TRANSACTION');
+    
+    // Primero eliminamos los registros relacionados en TableroCadenasTexto
+    await db.query('DELETE FROM TableroCadenasTexto WHERE tablero_id = ?', [req.params.id]);
+    
+    // Luego eliminamos los registros relacionados en TableroInfoConexion
+    await db.query('DELETE FROM TableroInfoConexion WHERE tablero_id = ?', [req.params.id]);
+    
+    // Finalmente eliminamos el tablero
+    const [result] = await db.query('DELETE FROM Tablero WHERE id = ?', [req.params.id]);
+    
+    // Confirmamos la transacción
+    await db.query('COMMIT');
+    
     res.json({ mensaje: 'Tablero eliminado correctamente' });
   } catch (error) {
+    // Si ocurre un error, revertimos los cambios
+    await db.query('ROLLBACK');
     console.error('Error al eliminar tablero:', error);
     res.status(500).json({ error: 'Error al eliminar el tablero' });
   }
