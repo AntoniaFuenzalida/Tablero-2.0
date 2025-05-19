@@ -35,6 +35,7 @@ const MainDocente = () => {
         if (response.ok) {
           setUsuario({
             nombre: data.nombre,
+            id: data.id,
             departamento: data.departamento,
           });
         } else {
@@ -87,7 +88,7 @@ const MainDocente = () => {
 
       {/* Body */}      <div className="flex flex-col md:flex-row gap-6 px-6 py-6">
         {/* Sidebar */}
-        <SidebarDocente onTableroSeleccionado={setTableroSeleccionado} />
+        <SidebarDocente onTableroSeleccionado={setTableroSeleccionado} usuario={usuario}/>
 
         {/* Panel central */}
         <div className="flex-1 space-y-4">

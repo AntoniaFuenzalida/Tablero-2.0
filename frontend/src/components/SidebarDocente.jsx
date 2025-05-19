@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from "react";
 
-const SidebarDocente = ({ onTableroSeleccionado }) => {
+const SidebarDocente = ({ onTableroSeleccionado, usuario }) => {
   const [disponible, setDisponible] = useState(false);
   const [dispositivoId, setDispositivoId] = useState("");
   const [dispositivos, setDispositivos] = useState([]);
   const [loading, setLoading] = useState(true);
   // !!!! es importente tener que cambiar esto
   // ID del usuario, Estatica pero la id que se sea reactiva
-  const usuario_id = 2; 
+  const usuario_id = usuario.id; 
 
   useEffect(() => {
     // Función para obtener todos los tableros de la API dependiendo del usuario
+    console.log("usuario", usuario);
     const fetchTableros = async () => {
       setLoading(true);
       try {
@@ -43,8 +44,8 @@ const SidebarDocente = ({ onTableroSeleccionado }) => {
       } finally {
         setLoading(false);
       }
-    };    fetchTableros();
-  }, [onTableroSeleccionado]);
+  };    fetchTableros();
+  }, [onTableroSeleccionado, usuario]);
   const handleCambioDispositivo = (e) => {
     const nuevoTableroId = e.target.value;
     setDispositivoId(nuevoTableroId);
@@ -61,7 +62,7 @@ const SidebarDocente = ({ onTableroSeleccionado }) => {
         <div className="w-16 h-16 bg-red-100 text-red-700 rounded-full flex items-center justify-center text-2xl font-bold">
           👤
         </div>
-        <h2 className="text-sm font-semibold text-gray-800">Profesor Ejemplo</h2>
+        <h2 className="text-sm font-semibold text-gray-800">{usuario.nombre}</h2>
         <p className="text-xs text-gray-500 text-center -mt-1">
           Departamento de Matemáticas
         </p>

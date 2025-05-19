@@ -55,9 +55,7 @@ const registerUser = async (req, res) => {
         return res.status(401).json({ error: 'Contraseña incorrecta' });
   
     const token = jwt.sign(
-      { id: user.id, nombre: user.nombre, correo: user.correo, rol: user.rol },
-
-        process.env.JWT_SECRET || "claveSecreta",
+      { id: user.id, nombre: user.nombre, correo: user.correo, rol: user.rol },        process.env.JWT_SECRET || "claveSecreta",
         { expiresIn: '1h' }
       );
   
