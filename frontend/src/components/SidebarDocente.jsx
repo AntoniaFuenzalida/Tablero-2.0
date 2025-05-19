@@ -1,16 +1,45 @@
 import React, { useEffect, useState } from "react";
 import { useUser } from "../context/UserContext";
 
-const SidebarDocente = ({ onDisponibilidadCambiada }) => {
+const SidebarDocente = ({ onDisponibilidadCambiada, onTableroSeleccionado }) => {
   const { usuario, fetchUserData } = useUser();
   const [disponible, setDisponible] = useState(false);
+  const [dispositivoId, setDispositivoId] = useState("");
+  const [dispositivos, setDispositivos] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sincroniza el estado local con el valor actual del contexto
+  const usuario_id = usuario?.id;
+
   useEffect(() => {
     if (usuario?.disponible !== undefined) {
       setDisponible(usuario.disponible);
     }
   }, [usuario]);
+
+  useEffect(() => {
+    const fetchTableros = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`http://localhost:3001/api/tableros?usuario_id=${usuario_id}`);
+        if (!response.ok) throw new Error(`Error al obtener tableros: ${response.status}`);
+        const data = await response.json();
+        const tablerosFormateados = data.map(tablero => ({ id: `${tablero.id}` }));
+        setDispositivos(tablerosFormateados);
+        if (tablerosFormateados.length > 0) {
+          const primerTableroId = tablerosFormateados[0].id;
+          setDispositivoId(primerTableroId);
+          if (onTableroSeleccionado) onTableroSeleccionado(primerTableroId);
+        }
+      } catch (error) {
+        console.error("Error al cargar los tableros:", error);
+        setDispositivoId("TB-001");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (usuario_id) fetchTableros();
+  }, [usuario_id, onTableroSeleccionado]);
 
   const handleDisponibilidadChange = async () => {
     const nuevoEstado = !disponible;
@@ -18,7 +47,6 @@ const SidebarDocente = ({ onDisponibilidadCambiada }) => {
 
     try {
       const token = localStorage.getItem("token");
-
       const res = await fetch("http://localhost:3001/api/update", {
         method: "PUT",
         headers: {
@@ -29,19 +57,21 @@ const SidebarDocente = ({ onDisponibilidadCambiada }) => {
       });
 
       if (res.ok) {
-        fetchUserData(); // actualiza el contexto global
-        if (onDisponibilidadCambiada) {
-          onDisponibilidadCambiada(); // 🔔 actualiza las notificaciones al instante
-        }
-
+        fetchUserData();
+        if (onDisponibilidadCambiada) onDisponibilidadCambiada();
       } else {
         alert("Error al actualizar disponibilidad");
       }
-
     } catch (err) {
       console.error("Error:", err);
       alert("Error de conexión con el servidor");
     }
+  };
+
+  const handleCambioDispositivo = (e) => {
+    const nuevoTableroId = e.target.value;
+    setDispositivoId(nuevoTableroId);
+    if (onTableroSeleccionado) onTableroSeleccionado(nuevoTableroId);
   };
 
   return (
@@ -71,13 +101,7 @@ const SidebarDocente = ({ onDisponibilidadCambiada }) => {
           </label>
           <p className="text-xs mt-1 text-gray-600">
             Estado actual:{" "}
-            <span
-              className={
-                disponible
-                  ? "text-green-600 font-semibold"
-                  : "text-red-600 font-semibold"
-              }
-            >
+            <span className={disponible ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
               {disponible ? "Disponible" : "No disponible"}
             </span>
           </p>
@@ -87,6 +111,24 @@ const SidebarDocente = ({ onDisponibilidadCambiada }) => {
       {/* Estado del dispositivo */}
       <div className="border rounded-lg p-4 text-sm text-gray-700 space-y-2">
         <h3 className="font-semibold text-sm">Estado del Dispositivo</h3>
+        <label className="block text-sm mb-1">Seleccionar Tablero:</label>
+
+        {loading ? (
+          <p className="text-gray-500 text-sm italic">Cargando tableros...</p>
+        ) : (
+          <select
+            value={dispositivoId}
+            onChange={handleCambioDispositivo}
+            className="w-full border border-gray-300 rounded p-1"
+          >
+            {dispositivos.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.id}
+              </option>
+            ))}
+          </select>
+        )}
+
         <p>
           Panel Tablero:{" "}
           <span className="text-green-600 font-semibold">● Conectado</span>
@@ -97,7 +139,7 @@ const SidebarDocente = ({ onDisponibilidadCambiada }) => {
         </p>
         <p>
           ID del dispositivo:{" "}
-          <span className="font-mono text-gray-800">TB-001</span>
+          <span className="font-mono text-gray-800">{dispositivoId || "TB-001"}</span>
         </p>
       </div>
     </aside>

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db'); 
+const db = require('../db');
+const bcrypt = require('bcrypt');
 
 const {
   getUsers,
@@ -9,24 +10,24 @@ const {
   updateUser,
   logoutUser,
 } = require('../controllers/usuariosController');
-const verifyToken = require('../controllers/authMiddleware'); 
-const bcrypt = require('bcrypt');
 
-// Rutas públicas
+const tablerosController = require('../controllers/tablerosController'); // ✅ Controlador de tableros
+const verifyToken = require('../controllers/authMiddleware');
+
+// --- Rutas públicas ---
 router.get('/users', getUsers);
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 router.post('/logout', verifyToken, logoutUser);
 
-
-// Rutas protegidas
+// --- Rutas protegidas ---
 router.put('/update', verifyToken, updateUser);
 
-// Ruta para obtener datos del usuario autenticado
+// Obtener datos del usuario autenticado
 router.get('/me', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(
-      'SELECT nombre, correo, departamento, oficina, disponible, rol FROM Usuario WHERE id = ?',
+      'SELECT nombre, id, correo, departamento, oficina FROM Usuario WHERE id = ?',
       [req.user.id]
     );
 
@@ -40,6 +41,7 @@ router.get('/me', verifyToken, async (req, res) => {
   }
 });
 
+// Cambiar contraseña
 router.put('/cambiar-contrasena', verifyToken, async (req, res) => {
   const { actual, nueva } = req.body;
   const userId = req.user.id;
@@ -61,6 +63,7 @@ router.put('/cambiar-contrasena', verifyToken, async (req, res) => {
   }
 });
 
+// Guardar horario de atención
 router.post('/horario', verifyToken, async (req, res) => {
   const userId = req.user.id;
   const horarios = req.body.horarios;
@@ -84,6 +87,7 @@ router.post('/horario', verifyToken, async (req, res) => {
   }
 });
 
+// Obtener horario de atención
 router.get('/horario', verifyToken, async (req, res) => {
   const userId = req.user.id;
 
@@ -100,6 +104,7 @@ router.get('/horario', verifyToken, async (req, res) => {
   }
 });
 
+// Notificaciones
 router.get('/notificaciones', verifyToken, async (req, res) => {
   const userId = req.user.id;
 
@@ -145,22 +150,24 @@ router.get('/notificaciones/historial', verifyToken, async (req, res) => {
   }
 });
 
+// Obtener docentes disponibles
 router.get('/docentes', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(
-      'SELECT id, nombre, correo, departamento, oficina, disponible FROM Usuario WHERE rol = "docente" AND disponible = 1'
+      'SELECT id, nombre, correo, departamento, oficina, disponible FROM Usuario WHERE rol = "docente"'
     );
     res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Error al obtener docentes conectados' });
+    res.status(500).json({ error: 'Error al obtener docentes' });
   }
 });
+
 
 router.get('/docentes/conectados', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(
-      'SELECT id, nombre, correo, departamento, oficina, disponible FROM Usuario WHERE rol = "docente" AND disponible = 1'
+      'SELECT id, nombre, correo, departamento, oficina, disponible FROM Usuario WHERE rol = \"docente\" AND disponible = 1'
     );
     res.json(rows);
   } catch (err) {
@@ -169,6 +176,10 @@ router.get('/docentes/conectados', verifyToken, async (req, res) => {
   }
 });
 
-
+router.get('/tableros', tablerosController.getTableros);
+router.get('/tableros/:id', tablerosController.getTableroById);
+router.post('/tableros', tablerosController.createTablero);
+router.put('/tableros/:id', tablerosController.updateTablero);
+router.delete('/tableros/:id', tablerosController.deleteTablero);
 
 module.exports = router;

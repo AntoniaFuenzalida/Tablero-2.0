@@ -12,6 +12,7 @@ const MainDocente = () => {
   const [mostrarNotificaciones, setMostrarNotificaciones] = useState(false);
   const [notificaciones, setNotificaciones] = useState([]);
   const [historialNotificaciones, setHistorialNotificaciones] = useState([]);
+  const [tableroSeleccionado, setTableroSeleccionado] = useState("");
 
   const navigate = useNavigate();
 
@@ -29,12 +30,10 @@ const MainDocente = () => {
       console.error("Error al cerrar sesión:", err);
     }
 
-   localStorage.setItem("logout-event", Date.now());
-
+    localStorage.setItem("logout-event", Date.now());
     localStorage.removeItem("token");
     navigate("/login");
   };
-
 
   const fetchUsuario = async () => {
     const token = localStorage.getItem("token");
@@ -126,7 +125,6 @@ const MainDocente = () => {
       fetchHistorialNotificaciones();
     }
   };
-
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -234,31 +232,39 @@ const MainDocente = () => {
       </header>
 
       <div className="flex flex-col md:flex-row gap-6 px-6 py-6">
-        <SidebarDocente onDisponibilidadCambiada={actualizarNotificaciones} />
+        <SidebarDocente
+          onDisponibilidadCambiada={actualizarNotificaciones}
+          onTableroSeleccionado={setTableroSeleccionado}
+          usuario={usuario}
+        />
+
         <div className="flex-1 space-y-4">
           <div className="flex gap-2 border-b pb-2">
-            {[
-              { key: "mensajes", label: "Mensajes" },
-              { key: "horario", label: "Horario" },
-              { key: "notificaciones", label: "Notificaciones" },
-              { key: "configuracion", label: "Configuración" },
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => setPestanaActiva(key)}
-                className={`px-4 py-1 rounded-t-md text-sm font-medium transition ${
-                  pestanaActiva === key
-                    ? "bg-red-700 text-white shadow"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+            {["mensajes", "horario", "notificaciones", "configuracion"].map((key) => {
+              const labelMap = {
+                mensajes: "Mensajes",
+                horario: "Horario",
+                notificaciones: "Notificaciones",
+                configuracion: "Configuración",
+              };
+              return (
+                <button
+                  key={key}
+                  onClick={() => setPestanaActiva(key)}
+                  className={`px-4 py-1 rounded-t-md text-sm font-medium transition ${
+                    pestanaActiva === key
+                      ? "bg-red-700 text-white shadow"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  {labelMap[key]}
+                </button>
+              );
+            })}
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6">
-            {pestanaActiva === "mensajes" && <PanelMensajes />}
+            {pestanaActiva === "mensajes" && <PanelMensajes tableroId={tableroSeleccionado} />}
             {pestanaActiva === "horario" && <HorarioAtencion />}
             {pestanaActiva === "configuracion" && <ConfiguracionCuenta />}
             {pestanaActiva === "notificaciones" && (
@@ -274,21 +280,24 @@ const MainDocente = () => {
                           <p className="font-medium text-gray-700">{n.mensaje}</p>
                           <span
                             className={`text-xs px-2 py-0.5 rounded-full ${
-                              n.leida ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                              n.leida
+                                ? "bg-green-100 text-green-700"
+                                : "bg-yellow-100 text-yellow-700"
                             }`}
                           >
                             {n.leida ? "Leída" : "No leída"}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500">{new Date(n.fecha).toLocaleString("es-CL", {
-                                    timeZone: "America/Santiago",
-                                    weekday: "long",
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
+                        <p className="text-xs text-gray-500">
+                          {new Date(n.fecha).toLocaleString("es-CL", {
+                            timeZone: "America/Santiago",
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </p>
                       </li>
                     ))}
