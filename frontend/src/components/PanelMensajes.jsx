@@ -72,10 +72,19 @@ const PanelMensajes = ({ tableroId }) => {
     } catch (error) {
       console.error("Error al eliminar el mensaje:", error);
     }
-  };
-  useEffect(() => {
+  };  useEffect(() => {
     if (!tableroId) return;
-    const brokerUrl = "ws://192.168.1.4:9001";
+    
+    // Verificar si hay una IP personalizada configurada
+    const usarIpPersonalizada = localStorage.getItem("usarIpPersonalizada") === "true";
+    const ipPersonalizada = localStorage.getItem("mqttIpPersonalizada");
+    
+    // IP por defecto o personalizada
+    const brokerUrl = (usarIpPersonalizada && ipPersonalizada) 
+      ? ipPersonalizada 
+      : "ws://192.168.1.4:9001";
+      
+    console.log(`[MQTT] Usando broker: ${brokerUrl}`);
     const mqttClient = mqtt.connect(brokerUrl);
 
     mqttClient.on("connect", () => {

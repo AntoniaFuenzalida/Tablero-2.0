@@ -60,3 +60,31 @@
 1747887339: Client mqttjs_ff7430f6 disconnected.
 1747887340: New client connected from ::ffff:172.19.0.1:50652 as mqttjs_719963be (p2, c1, k60).
 1747887340: Client mqttjs_e8e915db disconnected.
+1747887780: Client mqttjs_719963be closed its connection.
+1747887781: New client connected from ::ffff:172.19.0.1:33336 as mqttjs_d14d0c15 (p2, c1, k60).
+1747887797: Client mqttjs_d14d0c15 disconnected.
+1747887797: New client connected from ::ffff:172.19.0.1:48060 as mqttjs_7c92d276 (p2, c1, k60).
+1747887800: New client connected from ::ffff:172.19.0.1:55440 as mqttjs_c6eb3852 (p2, c1, k60).
+1747887800: Client mqttjs_7c92d276 disconnected.
+1747887804: New client connected from ::ffff:172.19.0.1:55446 as mqttjs_73f82e36 (p2, c1, k60).
+1747887805: Client mqttjs_c6eb3852 disconnected.
+1747887810: Client mqttjs_73f82e36 closed its connection.
+1747887810: New client connected from ::ffff:172.19.0.1:52786 as mqttjs_e72b85ce (p2, c1, k60).
+1747887837: Client mqttjs_e72b85ce disconnected.
+1747887870: New client connected from ::ffff:172.19.0.1:37772 as mqttjs_6183b438 (p2, c1, k60).
+1747888138: Client mqttjs_6183b438 closed its connection.
+1747888138: New client connected from ::ffff:172.19.0.1:38246 as mqttjs_200892ef (p2, c1, k60).
+1747888155: Client mqttjs_200892ef disconnected.
+1747888162: New client connected from ::ffff:172.19.0.1:41826 as mqttjs_b2c43483 (p2, c1, k60).
+1747888173: New client connected from ::ffff:172.19.0.1:50778 as mqttjs_6b133d7c (p2, c1, k60).
+1747888173: Client mqttjs_b2c43483 disconnected.
+1747888176: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1747888209: New client connected from ::ffff:172.19.0.1:42658 as mqttjs_b5697f95 (p2, c1, k60).
+1747888209: Client mqttjs_6b133d7c disconnected.
+1747888235: New client connected from ::ffff:172.19.0.1:52080 as mqttjs_1af6aec7 (p2, c1, k60).
+1747888235: Client mqttjs_b5697f95 disconnected.
+1747888250: New client connected from ::ffff:172.19.0.1:51880 as mqttjs_460316c8 (p2, c1, k60).
+1747888250: Client mqttjs_1af6aec7 disconnected.
+1747888269: New client connected from ::ffff:172.19.0.1:35166 as mqttjs_c01c6633 (p2, c1, k60).
+1747888269: Client mqttjs_460316c8 disconnected.
+1747888470: Client mqttjs_c01c6633 closed its connection.
