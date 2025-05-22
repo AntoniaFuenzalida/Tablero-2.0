@@ -289,6 +289,9 @@ const PanelMensajes = ({ tableroId }) => {
         <ul className="space-y-2">
           {mensajes.map((msg) => (
             <li
+              onClick={() => seleccionarMensaje(msg)}
+              title="Seleccionar como mensaje actual"
+
               key={msg.id}
               className={`flex justify-between items-center px-4 py-2 rounded border ${
                 mensajeActual && msg.id === mensajeActual.id
@@ -300,7 +303,6 @@ const PanelMensajes = ({ tableroId }) => {
                 <button
                   onClick={() => seleccionarMensaje(msg)}
                   className="text-green-600 hover:text-green-800"
-                  title="Seleccionar como mensaje actual"
                 >
                   <CheckCircle size={20} />
                 </button>

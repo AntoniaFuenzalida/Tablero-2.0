@@ -111,3 +111,23 @@
 1747889368: Client mqttjs_7eb3ad18 disconnected.
 1747889371: New client connected from ::ffff:172.19.0.1:36548 as mqttjs_1e553fc8 (p2, c1, k60).
 1747889371: Client mqttjs_07e5f859 disconnected.
+1747889543: New client connected from ::ffff:172.19.0.1:42372 as mqttjs_2e7cf099 (p2, c1, k60).
+1747889543: Client mqttjs_1e553fc8 disconnected.
+1747889546: New client connected from ::ffff:172.19.0.1:42374 as mqttjs_9aa13db6 (p2, c1, k60).
+1747889546: Client mqttjs_2e7cf099 disconnected.
+1747889555: New client connected from ::ffff:172.19.0.1:53324 as mqttjs_c7fc6116 (p2, c1, k60).
+1747889555: Client mqttjs_9aa13db6 disconnected.
+1747889601: New client connected from ::ffff:172.19.0.1:32996 as mqttjs_59ba142e (p2, c1, k60).
+1747889601: Client mqttjs_c7fc6116 disconnected.
+1747889602: Client mqttjs_59ba142e closed its connection.
+1747889603: New client connected from ::ffff:172.19.0.1:33006 as mqttjs_57455f43 (p2, c1, k60).
+1747889655: New client connected from ::ffff:172.19.0.1:48120 as mqttjs_4a49c474 (p2, c1, k60).
+1747889655: Client mqttjs_57455f43 disconnected.
+1747889696: New client connected from ::ffff:172.19.0.1:43738 as mqttjs_02e5f237 (p2, c1, k60).
+1747889696: Client mqttjs_4a49c474 disconnected.
+1747889697: New client connected from ::ffff:172.19.0.1:43742 as mqttjs_9e617945 (p2, c1, k60).
+1747889697: Client mqttjs_02e5f237 disconnected.
+1747889701: Client mqttjs_9e617945 closed its connection.
+1747889702: New client connected from ::ffff:172.19.0.1:34100 as mqttjs_e2fd5e96 (p2, c1, k60).
+1747889742: Client mqttjs_e2fd5e96 closed its connection.
+1747889742: New client connected from ::ffff:172.19.0.1:41064 as mqttjs_e942c1f2 (p2, c1, k60).

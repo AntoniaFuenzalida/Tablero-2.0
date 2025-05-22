@@ -202,14 +202,7 @@ const SidebarDocente = ({ onDisponibilidadCambiada, onTableroSeleccionado }) => 
             ))}
             <option value="manual">Tablero manual</option>
           </select>
-        )}        <p>
-          Panel Tablero:{" "}
-          <span className="text-green-600 font-semibold">● Conectado</span>
-        </p>
-        <p>
-          Última sincronización:{" "}
-          <span className="text-gray-600">Hace 5 minutos</span>
-        </p>
+        )}
         <p>
           ID del dispositivo:{" "}
           <span className="font-mono text-gray-800">
