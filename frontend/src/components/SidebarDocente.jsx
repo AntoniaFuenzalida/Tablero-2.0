@@ -7,6 +7,8 @@ const SidebarDocente = ({ onDisponibilidadCambiada, onTableroSeleccionado }) => 
   const [dispositivoId, setDispositivoId] = useState("");
   const [dispositivos, setDispositivos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [mostrarModalManual, setMostrarModalManual] = useState(false);
+  const [tableroManualId, setTableroManualId] = useState("");
 
   const usuario_id = usuario?.id;
 
@@ -14,9 +16,7 @@ const SidebarDocente = ({ onDisponibilidadCambiada, onTableroSeleccionado }) => 
     if (usuario?.disponible !== undefined) {
       setDisponible(usuario.disponible);
     }
-  }, [usuario]);
-
-  useEffect(() => {
+  }, [usuario]);  useEffect(() => {
     const fetchTableros = async () => {
       setLoading(true);
       try {
@@ -25,6 +25,8 @@ const SidebarDocente = ({ onDisponibilidadCambiada, onTableroSeleccionado }) => 
         const data = await response.json();
         const tablerosFormateados = data.map(tablero => ({ id: `${tablero.id}` }));
         setDispositivos(tablerosFormateados);
+        
+        // Siempre seleccionar el primer tablero primero si existe
         if (tablerosFormateados.length > 0) {
           const primerTableroId = tablerosFormateados[0].id;
           setDispositivoId(primerTableroId);
@@ -67,11 +69,30 @@ const SidebarDocente = ({ onDisponibilidadCambiada, onTableroSeleccionado }) => 
       alert("Error de conexión con el servidor");
     }
   };
-
   const handleCambioDispositivo = (e) => {
     const nuevoTableroId = e.target.value;
-    setDispositivoId(nuevoTableroId);
-    if (onTableroSeleccionado) onTableroSeleccionado(nuevoTableroId);
+    if (nuevoTableroId === "manual") {
+      setMostrarModalManual(true);
+      // No cambiamos el ID actual hasta que se confirme el tablero manual
+    } else {
+      setDispositivoId(nuevoTableroId);
+      
+      // Si estamos cambiando a un tablero normal, eliminamos cualquier tablero manual guardado
+      localStorage.removeItem('tableroManualId');
+      setTableroManualId("");
+      
+      if (onTableroSeleccionado) onTableroSeleccionado(nuevoTableroId);
+    }
+  };
+  const handleConfirmarTableroManual = () => {
+    if (tableroManualId.trim()) {
+      const tableroId = tableroManualId.trim();
+      setDispositivoId(tableroId);
+      // Guardar en localStorage para mantener la selección entre sesiones
+      localStorage.setItem('tableroManualId', tableroId);
+      if (onTableroSeleccionado) onTableroSeleccionado(tableroId);
+      setMostrarModalManual(false);
+    }
   };
 
   return (
@@ -115,9 +136,8 @@ const SidebarDocente = ({ onDisponibilidadCambiada, onTableroSeleccionado }) => 
 
         {loading ? (
           <p className="text-gray-500 text-sm italic">Cargando tableros...</p>
-        ) : (
-          <select
-            value={dispositivoId}
+        ) : (          <select
+            value={dispositivos.some(d => d.id === dispositivoId) ? dispositivoId : "manual"}
             onChange={handleCambioDispositivo}
             className="w-full border border-gray-300 rounded p-1"
           >
@@ -126,6 +146,7 @@ const SidebarDocente = ({ onDisponibilidadCambiada, onTableroSeleccionado }) => 
                 {t.id}
               </option>
             ))}
+            <option value="manual">Tablero manual</option>
           </select>
         )}
 
@@ -136,12 +157,46 @@ const SidebarDocente = ({ onDisponibilidadCambiada, onTableroSeleccionado }) => 
         <p>
           Última sincronización:{" "}
           <span className="text-gray-600">Hace 5 minutos</span>
-        </p>
-        <p>
+        </p>        <p>
           ID del dispositivo:{" "}
           <span className="font-mono text-gray-800">{dispositivoId || "TB-001"}</span>
+          {!dispositivos.some(d => d.id === dispositivoId) && dispositivoId && (
+            <span className="text-xs ml-1 bg-blue-100 text-blue-800 px-1 rounded">manual</span>
+          )}
         </p>
       </div>
+
+      {/* Modal para ingresar ID de tablero manual */}
+      {mostrarModalManual && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-80">
+            <h3 className="text-lg font-medium mb-4">Ingresar ID de Tablero Manual</h3>
+            <input
+              type="text"
+              value={tableroManualId}
+              onChange={(e) => setTableroManualId(e.target.value)}
+              placeholder="Ingrese ID del tablero"
+              className="w-full border border-gray-300 rounded p-2 mb-4"
+            />            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setMostrarModalManual(false);
+                  setTableroManualId(""); // Limpiar el input al cancelar
+                }}
+                className="px-4 py-2 border rounded hover:bg-gray-100"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmarTableroManual}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 };

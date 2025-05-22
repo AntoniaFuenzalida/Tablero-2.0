@@ -15,7 +15,6 @@ const MainDocente = () => {
   const [tableroSeleccionado, setTableroSeleccionado] = useState("");
 
   const navigate = useNavigate();
-
   const cerrarSesion = async () => {
     const token = localStorage.getItem("token");
 
@@ -30,8 +29,14 @@ const MainDocente = () => {
       console.error("Error al cerrar sesión:", err);
     }
 
+    // Limpiar todas las variables de sesión
     localStorage.setItem("logout-event", Date.now());
     localStorage.removeItem("token");
+    localStorage.removeItem("tableroManualId");
+    
+    // Restablecemos el estado del tablero
+    setTableroSeleccionado("");
+    
     navigate("/login");
   };
 

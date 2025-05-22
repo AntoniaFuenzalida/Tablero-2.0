@@ -73,10 +73,9 @@ const PanelMensajes = ({ tableroId }) => {
       console.error("Error al eliminar el mensaje:", error);
     }
   };
-
   useEffect(() => {
     if (!tableroId) return;
-    const brokerUrl = "ws://192.168.1.9:9001";
+    const brokerUrl = "ws://192.168.1.4:9001";
     const mqttClient = mqtt.connect(brokerUrl);
 
     mqttClient.on("connect", () => {
@@ -100,7 +99,14 @@ const PanelMensajes = ({ tableroId }) => {
 
     setClient(mqttClient);
 
+    // Limpiar el estado al cambiar de tablero o desconectar
     return () => {
+      // Resetear el estado del panel de mensajes
+      setMensajeActual(null);
+      setMensajes([]);
+      setNuevoMensaje("");
+      setEditandoMensaje(false);
+      
       if (mqttClient) {
         mqttClient.unsubscribe(mqttTopic);
         mqttClient.end();

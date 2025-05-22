@@ -31,3 +31,32 @@
 1747350270: Opening ipv6 listen socket on port 1883.
 1747350270: Opening websockets listen socket on port 9001.
 1747350270: mosquitto version 2.0.21 running
+1747886375: mosquitto version 2.0.21 starting
+1747886375: Config loaded from /mosquitto/config/mosquitto.conf.
+1747886375: Opening ipv4 listen socket on port 1883.
+1747886375: Opening ipv6 listen socket on port 1883.
+1747886375: Opening websockets listen socket on port 9001.
+1747886375: mosquitto version 2.0.21 running
+1747886983: New client connected from ::ffff:172.19.0.1:49494 as mqttjs_8702cf75 (p2, c1, k60).
+1747886993: New client connected from ::ffff:172.19.0.1:55672 as mqttjs_f24905c0 (p2, c1, k60).
+1747886993: Client mqttjs_8702cf75 disconnected.
+1747886995: New client connected from ::ffff:172.19.0.1:55684 as mqttjs_aae2d66a (p2, c1, k60).
+1747886995: Client mqttjs_f24905c0 disconnected.
+1747886998: Client mqttjs_aae2d66a disconnected.
+1747887009: New client connected from ::ffff:172.19.0.1:49400 as mqttjs_d07b0057 (p2, c1, k60).
+1747887016: New client connected from ::ffff:172.19.0.1:49416 as mqttjs_d7f4f1db (p2, c1, k60).
+1747887016: Client mqttjs_d07b0057 disconnected.
+1747887028: Client mqttjs_d7f4f1db disconnected.
+1747887037: New client connected from ::ffff:172.19.0.1:46650 as mqttjs_0a291c03 (p2, c1, k60).
+1747887042: New client connected from ::ffff:172.19.0.1:42228 as mqttjs_58be6e14 (p2, c1, k60).
+1747887042: Client mqttjs_0a291c03 disconnected.
+1747887314: Client mqttjs_58be6e14 closed its connection.
+1747887315: New client connected from ::ffff:172.19.0.1:43474 as mqttjs_0858d40e (p2, c1, k60).
+1747887322: New client connected from ::ffff:172.19.0.1:59358 as mqttjs_0112953c (p2, c1, k60).
+1747887322: Client mqttjs_0858d40e disconnected.
+1747887324: Client mqttjs_0112953c disconnected.
+1747887331: New client connected from ::ffff:172.19.0.1:38810 as mqttjs_ff7430f6 (p2, c1, k60).
+1747887339: New client connected from ::ffff:172.19.0.1:50644 as mqttjs_e8e915db (p2, c1, k60).
+1747887339: Client mqttjs_ff7430f6 disconnected.
+1747887340: New client connected from ::ffff:172.19.0.1:50652 as mqttjs_719963be (p2, c1, k60).
+1747887340: Client mqttjs_e8e915db disconnected.
