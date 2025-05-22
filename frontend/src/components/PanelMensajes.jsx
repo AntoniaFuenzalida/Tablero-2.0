@@ -1,34 +1,29 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Trash2, CheckCircle, Plus } from "lucide-react";
-import mqtt from "mqtt";
 import TableroCadenasTexto from "../classes/TableroCadenasTexto";
+import mqtt from "mqtt";
 
 const PanelMensajes = ({ tableroId }) => {
-  const [mensajeActual, setMensajeActual] = useState(null); // Referencia al mensaje seleccionado
-  const [mensajes, setMensajes] = useState([]); // Lista de TableroCadenasTexto
+  const [mensajeActual, setMensajeActual] = useState(null);
+  const [mensajes, setMensajes] = useState([]);
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [editandoMensaje, setEditandoMensaje] = useState(false);
 
-  // Estado de conexión MQTT
   const [client, setClient] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState("Desconectado");
+  const mqttTopic = `${tableroId}`;
 
-  const mqttTopic = `${tableroId}`;  // Topico MQTT basado en el tablero seleccionado
-  
   const fetchMensajes = useCallback(async () => {
+    if (!tableroId) return;
     try {
-      const response = await fetch(`http://localhost:3001/api/mensajes/${tableroId}`); 
+      const response = await fetch(`http://localhost:3001/api/mensajes/${tableroId}`);
       const data = await response.json();
-      setMensajes(data.map((msg) => TableroCadenasTexto.fromJSON(msg))); // Convertir JSON a instancias de TableroCadenasTexto
+      setMensajes(data.map((msg) => TableroCadenasTexto.fromJSON(msg)));
     } catch (error) {
       console.error("Error al obtener los mensajes:", error);
-      console.log(
-        "Error al obtener los mensajes: No se pudo conectar con el servidor."
-      );
     }
-  }, [tableroId]); // Dependencia del tableroId
-  
-  // Enviar un nuevo mensaje al servidor
+  }, [tableroId]);
+
   const enviarMensaje = async (texto) => {
     try {
       const response = await fetch(`http://localhost:3001/api/mensajes/${tableroId}`, {
@@ -38,19 +33,13 @@ const PanelMensajes = ({ tableroId }) => {
         },
         body: JSON.stringify({ texto }),
       });
-      if (!response.ok) {
-        throw new Error("Error al enviar el mensaje");
-      }
-      fetchMensajes(); // Actualizar la lista de mensajes después de enviar uno nuevo
+      if (!response.ok) throw new Error("Error al enviar el mensaje");
+      fetchMensajes();
     } catch (error) {
       console.error("Error al enviar el mensaje:", error);
-      console.log(
-        "Error al enviar el mensaje: No se pudo conectar con el servidor."
-      );
     }
   };
 
-  // Editar un mensaje en el servidor
   const editarMensaje = async (mensajeId, nuevoTexto) => {
     try {
       const response = await fetch(
@@ -63,18 +52,13 @@ const PanelMensajes = ({ tableroId }) => {
           body: JSON.stringify({ texto: nuevoTexto }),
         }
       );
-      if (!response.ok) {
-        throw new Error("Error al editar el mensaje");
-      }
-      fetchMensajes(); // Actualizar la lista de mensajes después de editar uno
+      if (!response.ok) throw new Error("Error al editar el mensaje");
+      fetchMensajes();
     } catch (error) {
       console.error("Error al editar el mensaje:", error);
-      console.log(
-        "Error al editar el mensaje: No se pudo conectar con el servidor."
-      );
     }
   };
-  // Eliminar un mensaje del servidor
+
   const eliminarMensaje = async (mensajeId) => {
     try {
       const response = await fetch(
@@ -83,36 +67,24 @@ const PanelMensajes = ({ tableroId }) => {
           method: "DELETE",
         }
       );
-      if (!response.ok) {
-        throw new Error("Error al eliminar el mensaje");
-      }
-      setMensajes((prevMensajes) =>
-        prevMensajes.filter((msg) => msg.id !== mensajeId)
-      );
+      if (!response.ok) throw new Error("Error al eliminar el mensaje");
+      setMensajes((prev) => prev.filter((msg) => msg.id !== mensajeId));
     } catch (error) {
       console.error("Error al eliminar el mensaje:", error);
-      console.log(
-        "Error al eliminar el mensaje: No se pudo conectar con el servidor."
-      );
     }
   };
-  
-  // Conexión con MQTT
+
   useEffect(() => {
-    const brokerUrl = "ws://192.168.1.9:9001"; // Reemplaza con la URL de tu broker MQTT/reemplazar por la ip que corresponde al servidor GCP
+    if (!tableroId) return;
+    const brokerUrl = "ws://192.168.1.9:9001";
     const mqttClient = mqtt.connect(brokerUrl);
 
     mqttClient.on("connect", () => {
       console.log("[MQTT] Conectado al broker");
       setConnectionStatus("Conectado");
-      
-      // Suscribirse al tópico del tablero seleccionado
       mqttClient.subscribe(mqttTopic, { qos: 0 }, (err) => {
-        if (err) {
-          console.error(`[MQTT] Error al suscribirse a ${mqttTopic}:`, err);
-        } else {
-          console.log(`[MQTT] Suscrito a ${mqttTopic}`);
-        }
+        if (err) console.error(`[MQTT] Error al suscribirse a ${mqttTopic}:`, err);
+        else console.log(`[MQTT] Suscrito a ${mqttTopic}`);
       });
     });
 
@@ -130,56 +102,57 @@ const PanelMensajes = ({ tableroId }) => {
 
     return () => {
       if (mqttClient) {
-        // Desuscribirse del tópico antes de desconectar
         mqttClient.unsubscribe(mqttTopic);
         mqttClient.end();
       }
     };
-  }, [mqttTopic]); // Reconectar cuando cambie el tópico MQTT
+  }, [mqttTopic, tableroId]);
+
   const publicarMensaje = (msg) => {
     if (client && client.connected) {
       client.publish(mqttTopic, msg.texto, { qos: 0 }, (err) => {
-        if (err) {
-          console.error(`[MQTT] Error al publicar en ${mqttTopic}:`, err);
-        } else {
-          console.log(`[MQTT] Mensaje publicado en ${mqttTopic}:`, msg.texto);
-        }
+        if (err) console.error(`[MQTT] Error al publicar en ${mqttTopic}:`, err);
+        else console.log(`[MQTT] Mensaje publicado en ${mqttTopic}:`, msg.texto);
       });
     } else {
-      console.warn("[MQTT] No se pudo publicar el mensaje: Cliente no conectado");
+      console.warn("[MQTT] Cliente no conectado");
     }
   };
 
-  
-  // Agregar un nuevo mensaje
   const agregarMensaje = () => {
     if (nuevoMensaje.trim() === "") return;
     enviarMensaje(nuevoMensaje);
     setNuevoMensaje("");
   };
-  // Seleccionar un mensaje como el actual (ligado directamente)
+
   const seleccionarMensaje = (msg) => {
-    setMensajeActual(msg); // Referencia directa al mensaje en la lista
+    setMensajeActual(msg);
     publicarMensaje(msg);
   };
-  
+
   useEffect(() => {
-    fetchMensajes();
-  }, [fetchMensajes]); // fetchMensajes ya depende de tableroId
+    if (tableroId) {
+      fetchMensajes();
+    }
+  }, [fetchMensajes, tableroId]);
+
+  if (!tableroId) {
+    return (
+      <div className="p-6 text-center text-gray-600">
+        Selecciona un tablero para comenzar...
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      {/* MENSAJE ACTUAL */}      <div className="bg-white border-l-4 border-red-500 p-4 rounded shadow">
+      <div className="bg-white border-l-4 border-red-500 p-4 rounded shadow">
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-red-600 font-bold flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            Mensaje Actual
+            <CheckCircle className="h-5 w-5 text-green-500" /> Mensaje Actual
           </h3>
           {!editandoMensaje && mensajeActual && (
-            <button
-              onClick={() => setEditandoMensaje(true)}
-              className="text-sm text-blue-600 hover:underline"
-            >
+            <button onClick={() => setEditandoMensaje(true)} className="text-sm text-blue-600 hover:underline">
               Editar
             </button>
           )}
@@ -193,27 +166,21 @@ const PanelMensajes = ({ tableroId }) => {
               value={mensajeActual.texto}
               onChange={(e) => {
                 const nuevoTexto = e.target.value;
-                setMensajeActual((prev) => ({
-                  ...prev,
-                  texto: nuevoTexto,
-                }));
+                setMensajeActual((prev) => ({ ...prev, texto: nuevoTexto }));
               }}
             />
             <div className="flex gap-2">
               <button
                 onClick={() => {
                   editarMensaje(mensajeActual.id, mensajeActual.texto);
-                  publicarMensaje(mensajeActual); // Publicar el mensaje actualizado
+                  publicarMensaje(mensajeActual);
                   setEditandoMensaje(false);
                 }}
                 className="bg-red-600 text-white px-4 py-1 rounded hover:bg-red-700 text-sm"
               >
                 Guardar
               </button>
-              <button
-                onClick={() => setEditandoMensaje(false)}
-                className="text-gray-600 hover:text-black text-sm"
-              >
+              <button onClick={() => setEditandoMensaje(false)} className="text-gray-600 hover:text-black text-sm">
                 Cancelar
               </button>
             </div>
@@ -223,19 +190,17 @@ const PanelMensajes = ({ tableroId }) => {
             {mensajeActual ? mensajeActual.texto : "No hay mensaje seleccionado"}
           </p>
         )}
-        <div className="mt-2 text-xs text-gray-500 flex flex-col">
+        <div className="mt-2 text-xs text-gray-500">
           <p>Estado MQTT: <span className="font-semibold">{connectionStatus}</span></p>
         </div>
       </div>
 
-      {/* MENSAJES PERSONALIZADOS */}
       <div className="bg-white p-4 rounded shadow">
         <h3 className="text-lg font-semibold mb-4">Mensajes</h3>
         <ul className="space-y-2">
           {mensajes.map((msg) => (
             <li
               key={msg.id}
-              onClick={() => seleccionarMensaje(msg)}
               className={`flex justify-between items-center px-4 py-2 rounded border ${
                 mensajeActual && msg.id === mensajeActual.id
                   ? "bg-red-100 border-red-300"
@@ -263,7 +228,6 @@ const PanelMensajes = ({ tableroId }) => {
           ))}
         </ul>
 
-        {/* NUEVO MENSAJE */}
         <div className="flex items-center gap-2 mt-4">
           <input
             type="text"

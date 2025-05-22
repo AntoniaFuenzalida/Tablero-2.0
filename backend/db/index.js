@@ -8,7 +8,8 @@ const pool = mysql.createPool({
   database: 'tablero',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  timezone: "America/Santiago",
 });
 
 module.exports = pool.promise();

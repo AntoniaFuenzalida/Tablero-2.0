@@ -6,23 +6,14 @@ const PanelGestionDispositivos = ({ usuarioId }) => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [nuevoDispositivo, setNuevoDispositivo] = useState({
-    id: "",
-    docente_id: "",
-  });
-  // Función para obtener los tableros desde la API
+  const [nuevoDispositivo, setNuevoDispositivo] = useState({ id: "", docente_id: "" });
+
   const obtenerDispositivos = async () => {
     setCargando(true);
     try {
-      const response = await fetch("http://localhost:3001/api/tableros", {
-        method: "GET",
-      });
-      if (!response.ok) {
-        throw new Error("Error al obtener los tableros");
-      }
-
+      const response = await fetch("http://localhost:3001/api/tableros", { method: "GET" });
+      if (!response.ok) throw new Error("Error al obtener los tableros");
       const data = await response.json();
-      
       const dispositivosFormateados = data.map(tablero => ({
         id: tablero.id,
         id_formato: `TB-${tablero.id.toString().padStart(3, '0')}`,
@@ -31,7 +22,6 @@ const PanelGestionDispositivos = ({ usuarioId }) => {
         estado: tablero.estado || "Desconectado",
         ultima_conexion: tablero.ultima_conexion || "Nunca"
       }));
-      
       setDispositivos(dispositivosFormateados);
       setError(null);
     } catch (err) {
@@ -42,23 +32,15 @@ const PanelGestionDispositivos = ({ usuarioId }) => {
     }
   };
 
-  // Función para obtener la lista de docentes
   const obtenerDocentes = async () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch("http://localhost:3001/api/users", {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!response.ok) {
-        throw new Error("Error al obtener los docentes");
-      }
-
+      if (!response.ok) throw new Error("Error al obtener los docentes");
       const data = await response.json();
-      // Filtramos solo los usuarios con rol "docente" si existe ese campo
       const docentesList = data.filter(user => user.rol === "docente" || !user.rol);
       setDocentes(docentesList);
     } catch (err) {
@@ -70,23 +52,15 @@ const PanelGestionDispositivos = ({ usuarioId }) => {
     obtenerDispositivos();
     obtenerDocentes();
   }, []);
+
   const agregarDispositivo = async () => {
     try {
       const response = await fetch("http://localhost:3001/api/tableros", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          usuario_id: nuevoDispositivo.docente_id || null,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usuario_id: nuevoDispositivo.docente_id || null }),
       });
-
-      if (!response.ok) {
-        throw new Error("Error al crear el tablero");
-      }
-
-      // Actualiza la lista después de agregar
+      if (!response.ok) throw new Error("Error al crear el tablero");
       obtenerDispositivos();
       setShowModal(false);
       setNuevoDispositivo({ id: "", docente_id: "" });
@@ -95,18 +69,14 @@ const PanelGestionDispositivos = ({ usuarioId }) => {
       setError("No se pudo agregar el dispositivo. " + err.message);
     }
   };
+
   const eliminarDispositivo = async (id) => {
     if (window.confirm("¿Estás seguro de eliminar este tablero?")) {
       try {
         const response = await fetch(`http://localhost:3001/api/tableros/${id}`, {
           method: "DELETE",
         });
-
-        if (!response.ok) {
-          throw new Error("Error al eliminar el tablero");
-        }
-
-        // Actualiza la lista después de eliminar
+        if (!response.ok) throw new Error("Error al eliminar el tablero");
         obtenerDispositivos();
       } catch (err) {
         console.error("Error:", err);
@@ -114,29 +84,22 @@ const PanelGestionDispositivos = ({ usuarioId }) => {
       }
     }
   };
+
   const actualizarAsignacion = async (id, docente_id) => {
     try {
       const response = await fetch(`http://localhost:3001/api/tableros/${id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          usuario_id: docente_id || null,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usuario_id: docente_id || null }),
       });
-
-      if (!response.ok) {
-        throw new Error("Error al actualizar el tablero");
-      }
-
-      // Actualiza la lista después de actualizar
+      if (!response.ok) throw new Error("Error al actualizar el tablero");
       obtenerDispositivos();
     } catch (err) {
       console.error("Error:", err);
       setError("No se pudo actualizar el dispositivo. " + err.message);
     }
   };
+
   return (
     <div className="p-6 w-full">
       <div className="flex justify-between items-center mb-4">
@@ -152,11 +115,9 @@ const PanelGestionDispositivos = ({ usuarioId }) => {
         </button>
       </div>
 
-      {/* Estado de carga y error */}
       {cargando && <p className="text-center py-4">Cargando dispositivos...</p>}
       {error && <p className="text-center py-4 text-red-500">{error}</p>}
 
-      {/* Tabla */}
       {!cargando && !error && (
         <table className="min-w-full border text-sm">
           <thead className="bg-gray-100">
@@ -180,7 +141,7 @@ const PanelGestionDispositivos = ({ usuarioId }) => {
                 <tr key={d.id} className="border-t">
                   <td className="px-4 py-2 font-mono">{d.id_formato}</td>
                   <td className="px-4 py-2">
-                    <select 
+                    <select
                       className="border rounded p-1"
                       value={d.usuario_id || ""}
                       onChange={(e) => actualizarAsignacion(d.id, e.target.value)}
@@ -204,10 +165,7 @@ const PanelGestionDispositivos = ({ usuarioId }) => {
                   </td>
                   <td className="px-4 py-2">{d.ultima_conexion}</td>
                   <td className="px-4 py-2 flex justify-center space-x-2">
-                    <button 
-                      className="text-blue-600 hover:text-blue-800"
-                      title="Detalles"
-                    >
+                    <button className="text-blue-600 hover:text-blue-800" title="Detalles">
                       📋
                     </button>
                     <button
@@ -225,12 +183,10 @@ const PanelGestionDispositivos = ({ usuarioId }) => {
         </table>
       )}
 
-      {/* Modal para nuevo dispositivo */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
             <h3 className="text-lg font-semibold mb-4 text-red-600">Crear nuevo tablero</h3>
-
             <div className="space-y-3 mb-4">
               <div>
                 <label className="block text-sm font-medium">Docente Asignado</label>
@@ -250,7 +206,6 @@ const PanelGestionDispositivos = ({ usuarioId }) => {
                 </select>
               </div>
             </div>
-
             <div className="flex justify-end gap-3">
               <button
                 className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
