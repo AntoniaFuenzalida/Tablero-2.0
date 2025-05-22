@@ -1,18 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const diasSemana = [
-  "Lunes",
-  "Martes",
-  "Miércoles",
-  "Jueves",
-  "Viernes",
-];
+const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 
 const HorarioAtencion = () => {
   const [horarios, setHorarios] = useState(
     diasSemana.map((dia) => ({
       dia,
-      activo: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"].includes(dia),
+      activo: true,
       inicio: "10:00",
       fin: "12:00",
     }))
@@ -30,10 +24,69 @@ const HorarioAtencion = () => {
     setHorarios(actualizados);
   };
 
-  const guardarHorario = () => {
-    console.log("Horario guardado:", horarios);
-    alert("Horario guardado correctamente ✅");
+  const guardarHorario = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch("http://localhost:3001/api/horario", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ horarios }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Horario guardado correctamente ✅");
+      } else {
+        alert(data.error || "Error al guardar horario");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error de conexión con el servidor");
+    }
   };
+
+  useEffect(() => {
+    const cargarHorario = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const response = await fetch("http://localhost:3001/api/horario", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          const horariosCompletos = diasSemana.map((dia) => {
+            const encontrado = data.find((h) => h.diaSemana === dia);
+            return {
+              dia,
+              activo: !!encontrado,
+              inicio: encontrado?.hora || "10:00",
+              fin: encontrado?.horaFin || "12:00",
+            };
+          });
+
+          setHorarios(horariosCompletos);
+        } else {
+          alert("Error al cargar horarios");
+        }
+      } catch (err) {
+        console.error("Error al cargar horarios:", err);
+        alert("Error de conexión");
+      }
+    };
+
+    cargarHorario();
+  }, []);
 
   return (
     <section className="border border-red-700 rounded-lg p-6 w-full bg-white">
@@ -74,7 +127,6 @@ const HorarioAtencion = () => {
               />
             </div>
 
-            {/* Toggle switch */}
             <div className="ml-auto flex items-center">
               <label className="relative inline-flex items-center cursor-pointer">
                 <input

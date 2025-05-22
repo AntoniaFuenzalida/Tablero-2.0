@@ -2,6 +2,7 @@ const db = require('../db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+// Obtener todos los usuarios
 const getUsers = async (req, res) => {
   try {
     const [rows] = await db.query('SELECT * FROM Usuario');
@@ -11,109 +12,146 @@ const getUsers = async (req, res) => {
   }
 };
 
+// Registrar nuevo usuario
 const registerUser = async (req, res) => {
-    const { nombre, correo, contraseña, rol } = req.body;
-  
-    if (!nombre || !correo || !contraseña)
-      return res.status(400).json({ error: 'Todos los campos son obligatorios' });
-  
-    try {
-      const [existing] = await db.query('SELECT id FROM Usuario WHERE correo = ?', [correo]);
-      if (existing.length > 0) {
-        return res.status(409).json({ error: 'El usuario ya existe' });
-      }
-  
-      const hashedPassword = await bcrypt.hash(contraseña, 10);
-  
-      await db.query(
-        'INSERT INTO Usuario (nombre, correo, contraseña, rol) VALUES (?, ?, ?, ?)',
-        [nombre, correo, hashedPassword, rol]
-      );
-  
-      res.status(201).json({ message: 'Usuario registrado exitosamente' });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Error interno del servidor' });
+  const { nombre, correo, contraseña, rol } = req.body;
+
+  if (!nombre || !correo || !contraseña)
+    return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+
+  try {
+    const [existing] = await db.query('SELECT id FROM Usuario WHERE correo = ?', [correo]);
+    if (existing.length > 0) {
+      return res.status(409).json({ error: 'El usuario ya existe' });
     }
-  };
 
-  const loginUser = async (req, res) => {
-    const { correo, contraseña } = req.body;
-  
-    if (!correo || !contraseña)
-      return res.status(400).json({ error: 'Email y contraseña son requeridos' });
-  
-    try {
-      const [users] = await db.query('SELECT * FROM Usuario WHERE correo = ?', [correo]);
-      if (users.length === 0)
-        return res.status(401).json({ error: 'Usuario no encontrado' });
-  
-      const user = users[0];
-      const isMatch = await bcrypt.compare(contraseña, user.contraseña);
-  
-      if (!isMatch)
-        return res.status(401).json({ error: 'Contraseña incorrecta' });
-  
-    const token = jwt.sign(
-      { id: user.id, nombre: user.nombre, correo: user.correo, rol: user.rol },
+    const hashedPassword = await bcrypt.hash(contraseña, 10);
 
-        process.env.JWT_SECRET || "claveSecreta",
-        { expiresIn: '1h' }
-      );
-  
-      res.json({ message: 'Login exitoso', token });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Error interno del servidor' });
-    }
-  };
+    await db.query(
+      'INSERT INTO Usuario (nombre, correo, contraseña, rol) VALUES (?, ?, ?, ?)',
+      [nombre, correo, hashedPassword, rol]
+    );
 
-  
-  const updateUser = async (req, res) => {
-    const userId = req.user.id;
-    const { nombre, correo, departamento, oficina, contraseña } = req.body;
-
-    try {
-      let query = 'UPDATE Usuario SET';
-      const params = [];
-      
-      if (nombre) {
-        query += ' nombre = ?,';
-        params.push(nombre);
-      }
-
-      if (correo) {
-        query += ' correo = ?,';
-        params.push(correo);
-      }
-          if (departamento) {
-      query += ' departamento = ?,';
-      params.push(departamento);
-      }
-
-      if (oficina) {
-        query += ' oficina = ?,';
-        params.push(oficina);
-      }
-
-      if (contraseña) {
-        const hashed = await bcrypt.hash(contraseña, 10);
-        query += ' contraseña = ?,';
-        params.push(hashed);
-      }
-
-      query = query.slice(0, -1);
-      query += ' WHERE id = ?';
-      params.push(userId);
-
-      await db.query(query, params);
-
-      res.json({ message: 'Usuario actualizado correctamente' });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Error al actualizar el usuario' });
-    }
+    res.status(201).json({ message: 'Usuario registrado exitosamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 };
 
+// Iniciar sesión (y marcar como disponible)
+const loginUser = async (req, res) => {
+  const { correo, contraseña } = req.body;
 
-module.exports = { registerUser, getUsers , loginUser , updateUser};
+  if (!correo || !contraseña)
+    return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+
+  try {
+    const [users] = await db.query('SELECT * FROM Usuario WHERE correo = ?', [correo]);
+    if (users.length === 0)
+      return res.status(401).json({ error: 'Usuario no encontrado' });
+
+    const user = users[0];
+    const isMatch = await bcrypt.compare(contraseña, user.contraseña);
+
+    if (!isMatch)
+      return res.status(401).json({ error: 'Contraseña incorrecta' });
+
+    await db.query('UPDATE Usuario SET disponible = 1 WHERE id = ?', [user.id]);
+
+    const token = jwt.sign(
+      { id: user.id, nombre: user.nombre, correo: user.correo, rol: user.rol },
+      process.env.JWT_SECRET || "claveSecreta",
+      { expiresIn: '1h' }
+    );
+
+    res.json({ message: 'Login exitoso', token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+// Cerrar sesión (opcional) => marcar como no disponible
+const logoutUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    await db.query('UPDATE Usuario SET disponible = 0 WHERE id = ?', [userId]);
+    res.json({ message: 'Sesión cerrada correctamente' });
+  } catch (err) {
+    console.error("Error al cerrar sesión:", err);
+    res.status(500).json({ error: 'Error al cerrar sesión' });
+  }
+};
+
+// Actualizar datos del usuario
+const updateUser = async (req, res) => {
+  const userId = req.user.id;
+  const { nombre, correo, departamento, oficina, contraseña, disponible } = req.body;
+
+  try {
+    const updates = [];
+    const params = [];
+
+    if (nombre) {
+      updates.push("nombre = ?");
+      params.push(nombre);
+    }
+
+    if (correo) {
+      updates.push("correo = ?");
+      params.push(correo);
+    }
+
+    if (departamento) {
+      updates.push("departamento = ?");
+      params.push(departamento);
+    }
+
+    if (oficina) {
+      updates.push("oficina = ?");
+      params.push(oficina);
+    }
+
+    if (contraseña) {
+      const hashed = await bcrypt.hash(contraseña, 10);
+      updates.push("contraseña = ?");
+      params.push(hashed);
+    }
+
+    if (disponible !== undefined) {
+      updates.push("disponible = ?");
+      params.push(disponible);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No se enviaron campos para actualizar' });
+    }
+
+    const query = `UPDATE Usuario SET ${updates.join(', ')} WHERE id = ?`;
+    params.push(userId);
+
+    await db.query(query, params);
+
+    if (disponible !== undefined) {
+      const mensaje = `Tu estado de disponibilidad fue cambiado a: ${disponible ? 'Disponible' : 'No disponible'}`;
+      await db.query(
+        'INSERT INTO Notificacion (usuarioId, mensaje, tipo, fecha) VALUES (?, ?, ?, NOW())',
+        [userId, mensaje, 'disponibilidad']
+      );
+    }
+
+    res.json({ message: 'Usuario actualizado correctamente' });
+  } catch (err) {
+    console.error("Error en updateUser:", err);
+    res.status(500).json({ error: 'Error al actualizar el usuario' });
+  }
+};
+
+module.exports = {
+  registerUser,
+  getUsers,
+  loginUser,
+  updateUser,
+  logoutUser // nuevo
+};
