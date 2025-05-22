@@ -12,9 +12,50 @@ const PanelMensajes = ({ tableroId }) => {
   const [client, setClient] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState("Desconectado");
   const mqttTopic = `${tableroId}`;
+  const mqttServer = "ws://192.168.1.4:9001"; // Cambia esto a tu servidor MQTT
 
+  // Función para verificar si el tablero actual es manual
+  const esTableroManual = useCallback(() => {
+    // Si el ID no es numérico o es diferente a los IDs de tableros regulares
+    const savedTableroManual = localStorage.getItem("tableroManualId");
+    return savedTableroManual === tableroId;
+  }, [tableroId]);
+
+  // Función para manejar mensajes de tableros manuales usando localStorage
+  const getLocalStorageMensajes = useCallback(() => {
+    const key = `mensajes_${tableroId}`;
+    const savedMensajes = localStorage.getItem(key);
+    if (savedMensajes) {
+      try {
+        const parsedMensajes = JSON.parse(savedMensajes);
+        return parsedMensajes.map(msg => new TableroCadenasTexto(
+          msg.id, 
+          msg.tableroId || msg.tablero_id, 
+          msg.texto
+        ));
+      } catch (error) {
+        console.error("Error al parsear mensajes guardados:", error);
+        return [];
+      }
+    }
+    return [];
+  }, [tableroId]);
+
+  const saveLocalStorageMensajes = useCallback((mensajesArray) => {
+    const key = `mensajes_${tableroId}`;
+    localStorage.setItem(key, JSON.stringify(mensajesArray.map(m => m.toJSON())));
+  }, [tableroId]);
   const fetchMensajes = useCallback(async () => {
     if (!tableroId) return;
+    
+    // Si es un tablero manual, usar localStorage
+    if (esTableroManual()) {
+      const localMensajes = getLocalStorageMensajes();
+      setMensajes(localMensajes);
+      return;
+    }
+    
+    // Para tableros normales, usar la API
     try {
       const response = await fetch(`http://localhost:3001/api/mensajes/${tableroId}`);
       const data = await response.json();
@@ -22,9 +63,19 @@ const PanelMensajes = ({ tableroId }) => {
     } catch (error) {
       console.error("Error al obtener los mensajes:", error);
     }
-  }, [tableroId]);
-
+  }, [tableroId, esTableroManual, getLocalStorageMensajes]);
   const enviarMensaje = async (texto) => {
+    // Si es un tablero manual, guardar en localStorage
+    if (esTableroManual()) {
+      const nuevoMensajes = [...mensajes];
+      const nuevoId = Date.now().toString(); // Generamos un ID único basado en el tiempo
+      nuevoMensajes.push(new TableroCadenasTexto(nuevoId, tableroId, texto));
+      setMensajes(nuevoMensajes);
+      saveLocalStorageMensajes(nuevoMensajes);
+      return;
+    }
+    
+    // Para tableros normales, usar la API
     try {
       const response = await fetch(`http://localhost:3001/api/mensajes/${tableroId}`, {
         method: "POST",
@@ -39,8 +90,20 @@ const PanelMensajes = ({ tableroId }) => {
       console.error("Error al enviar el mensaje:", error);
     }
   };
-
   const editarMensaje = async (mensajeId, nuevoTexto) => {
+    // Si es un tablero manual, editar en localStorage
+    if (esTableroManual()) {
+      const mensajesActualizados = mensajes.map(msg => 
+        msg.id === mensajeId 
+          ? new TableroCadenasTexto(msg.id, msg.tableroId, nuevoTexto) 
+          : msg
+      );
+      setMensajes(mensajesActualizados);
+      saveLocalStorageMensajes(mensajesActualizados);
+      return;
+    }
+    
+    // Para tableros normales, usar la API
     try {
       const response = await fetch(
         `http://localhost:3001/api/mensajes/${tableroId}/${mensajeId}`,
@@ -58,8 +121,16 @@ const PanelMensajes = ({ tableroId }) => {
       console.error("Error al editar el mensaje:", error);
     }
   };
-
   const eliminarMensaje = async (mensajeId) => {
+    // Si es un tablero manual, eliminar de localStorage
+    if (esTableroManual()) {
+      const mensajesFiltrados = mensajes.filter(msg => msg.id !== mensajeId);
+      setMensajes(mensajesFiltrados);
+      saveLocalStorageMensajes(mensajesFiltrados);
+      return;
+    }
+    
+    // Para tableros normales, usar la API
     try {
       const response = await fetch(
         `http://localhost:3001/api/mensajes/${tableroId}/${mensajeId}`,
@@ -71,9 +142,14 @@ const PanelMensajes = ({ tableroId }) => {
       setMensajes((prev) => prev.filter((msg) => msg.id !== mensajeId));
     } catch (error) {
       console.error("Error al eliminar el mensaje:", error);
-    }
-  };  useEffect(() => {
+    }  };useEffect(() => {
     if (!tableroId) return;
+    
+    // Para tableros manuales, cargar desde localStorage inicialmente
+    if (esTableroManual()) {
+      const localMensajes = getLocalStorageMensajes();
+      setMensajes(localMensajes);
+    }
     
     // Verificar si hay una IP personalizada configurada
     const usarIpPersonalizada = localStorage.getItem("usarIpPersonalizada") === "true";
@@ -81,8 +157,7 @@ const PanelMensajes = ({ tableroId }) => {
     
     // IP por defecto o personalizada
     const brokerUrl = (usarIpPersonalizada && ipPersonalizada) 
-      ? ipPersonalizada 
-      : "ws://192.168.1.4:9001";
+      ? ipPersonalizada : mqttServer;
       
     console.log(`[MQTT] Usando broker: ${brokerUrl}`);
     const mqttClient = mqtt.connect(brokerUrl);
@@ -115,13 +190,12 @@ const PanelMensajes = ({ tableroId }) => {
       setMensajes([]);
       setNuevoMensaje("");
       setEditandoMensaje(false);
-      
-      if (mqttClient) {
+        if (mqttClient) {
         mqttClient.unsubscribe(mqttTopic);
         mqttClient.end();
       }
     };
-  }, [mqttTopic, tableroId]);
+  }, [mqttTopic, tableroId, esTableroManual, getLocalStorageMensajes]);
 
   const publicarMensaje = (msg) => {
     if (client && client.connected) {
