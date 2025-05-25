@@ -19,6 +19,11 @@ const registerUser = async (req, res) => {
   if (!nombre || !correo || !contraseña)
     return res.status(400).json({ error: 'Todos los campos son obligatorios' });
 
+  // Validar dominio del correo
+  if (!correo.endsWith("@alumnos.utalca.cl")) {
+    return res.status(400).json({ error: "El correo debe ser @alumnos.utalca.cl" });
+  }
+
   try {
     const [existing] = await db.query('SELECT id FROM Usuario WHERE correo = ?', [correo]);
     if (existing.length > 0) {

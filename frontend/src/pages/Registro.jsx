@@ -17,7 +17,6 @@ const Registro = () => {
           <img src={logoUtalca} alt="Logo Utalca" className="h-12 mb-2" />
           <h2 className="text-xl font-semibold text-red-700">Registro de Usuario</h2>
         </div>
-
         <form //Manejador del formulario de registro y controlador cuando se crea la cuenta
           className="space-y-4"
           onSubmit={async (e) => {
@@ -28,6 +27,11 @@ const Registro = () => {
               return;
             }
 
+            if (!correo.endsWith("@alumnos.utalca.cl")) {
+              alert("Solo se permiten correos institucionales @alumnos.utalca.cl");
+              return;
+            }
+            
             try {
               const response = await fetch("http://localhost:3001/api/register", {
                 method: "POST",
