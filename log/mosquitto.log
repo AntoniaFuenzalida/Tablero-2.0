@@ -131,3 +131,9 @@
 1747889702: New client connected from ::ffff:172.19.0.1:34100 as mqttjs_e2fd5e96 (p2, c1, k60).
 1747889742: Client mqttjs_e2fd5e96 closed its connection.
 1747889742: New client connected from ::ffff:172.19.0.1:41064 as mqttjs_e942c1f2 (p2, c1, k60).
+1748275875: mosquitto version 2.0.21 starting
+1748275875: Config loaded from /mosquitto/config/mosquitto.conf.
+1748275875: Opening ipv4 listen socket on port 1883.
+1748275875: Opening ipv6 listen socket on port 1883.
+1748275875: Opening websockets listen socket on port 9001.
+1748275875: mosquitto version 2.0.21 running
