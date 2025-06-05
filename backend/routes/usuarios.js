@@ -13,6 +13,7 @@ const {
 
 const tablerosController = require('../controllers/tablerosController'); // ✅ Controlador de tableros
 const verifyToken = require('../controllers/authMiddleware');
+const verificacionController = require("../controllers/verificacionController");
 
 // --- Rutas públicas ---
 router.get('/users', getUsers);
@@ -23,12 +24,16 @@ router.post('/logout', verifyToken, logoutUser);
 // --- Rutas protegidas ---
 router.put('/update', verifyToken, updateUser);
 
+router.post("/enviar-codigo", verificacionController.enviarCodigo);
+router.post("/verificar-codigo", verificacionController.verificarCodigo);
+
 // Obtener datos del usuario autenticado
 router.get('/me', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(
       'SELECT nombre, id, correo, departamento, oficina FROM Usuario WHERE id = ?',
       [req.user.id]
+      
     );
 
     if (rows.length === 0) {

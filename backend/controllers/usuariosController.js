@@ -14,16 +14,31 @@ const getUsers = async (req, res) => {
 
 // Registrar nuevo usuario
 const registerUser = async (req, res) => {
-  const { nombre, correo, contraseña, rol } = req.body;
-
-  if (!nombre || !correo || !contraseña)
-    return res.status(400).json({ error: 'Todos los campos son obligatorios' });
-
   try {
+    const { nombre, correo, contraseña, rol } = req.body;
+
+    if (!nombre || !correo || !contraseña)
+      return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+
+    // Validar dominio del correo
+    if (!correo.endsWith("@alumnos.utalca.cl")) {
+      return res.status(400).json({ error: "El correo debe ser @alumnos.utalca.cl" });
+    }
+
     const [existing] = await db.query('SELECT id FROM Usuario WHERE correo = ?', [correo]);
     if (existing.length > 0) {
+      // Verifica si el usuario está incompleto (sin contraseña o sin rol)
+      const [user] = await db.query('SELECT * FROM Usuario WHERE correo = ?', [correo]);
+      const u = user[0];
+      if (!u.contraseña || !u.nombre || !u.rol) {
+        return res.status(400).json({
+          error: "Este correo ya fue iniciado pero el registro no se completó. Contacta soporte o usa otro correo.",
+        });
+      }
+
       return res.status(409).json({ error: 'El usuario ya existe' });
     }
+
 
     const hashedPassword = await bcrypt.hash(contraseña, 10);
 
@@ -31,6 +46,9 @@ const registerUser = async (req, res) => {
       'INSERT INTO Usuario (nombre, correo, contraseña, rol) VALUES (?, ?, ?, ?)',
       [nombre, correo, hashedPassword, rol]
     );
+
+    console.log("✅ Registrando usuario:", { nombre, correo, rol });
+
 
     res.status(201).json({ message: 'Usuario registrado exitosamente' });
   } catch (err) {
