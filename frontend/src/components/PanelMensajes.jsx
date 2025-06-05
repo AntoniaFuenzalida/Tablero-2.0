@@ -235,7 +235,7 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
     };
   }, [mqttTopic, tableroId, esTableroManual, getLocalStorageMensajes]);  
   
-  const publicarMensaje = (msg) => {
+  const publicarMensaje = (msg) => { //publicar mensajes en formato JSON tambien puede recibir el color en cadena o arreglo
     if (client && client.connected) {
       const mensajeJson = {
         mensaje: msg.texto,
