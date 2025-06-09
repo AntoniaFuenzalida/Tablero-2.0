@@ -80,13 +80,10 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
         if (formatoJson) {
           // Formato JSON
           const mensajeJson = {
-            text: texto,
-            speed: velocidad,
-            color: {
-              r: color.r,
-              g: color.g,
-              b: color.b,
-            },
+            texto1: texto,
+            texto2: texto,
+            velocidad: velocidad,
+            animacion: "PA_SCROLL_LEFT"
           };
           
           client.publish(mqttTopic, JSON.stringify(mensajeJson), { qos: 0 }, (err) => {
@@ -122,13 +119,10 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
         if (formatoJson) {
           // Formato JSON
           const mensajeJson = {
-            text: texto,
-            speed: velocidad,
-            color: {
-              r: color.r,
-              g: color.g,
-              b: color.b,
-            },
+            texto1: texto,
+            texto2: texto,
+            velocidad: velocidad,
+            animacion: "PA_SCROLL_LEFT"
           };
           
           client.publish(mqttTopic, JSON.stringify(mensajeJson), { qos: 0 }, (err) => {
@@ -254,40 +248,39 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
     };
   }, [mqttTopic, tableroId, esTableroManual, getLocalStorageMensajes]);  
     const publicarMensaje = (msg) => {
-    if (client && client.connected) {
-      if (formatoJson) {
-        // Publicar en formato JSON
-        const mensajeJson = {
-          mensaje: msg.texto,
-          velocidad: velocidad,
-          color: {
-            r: color.r,
-            g: color.g,
-            b: color.b,
-          },
-        };
+  if (client && client.connected) {
+    if (formatoJson) {
+      // Publicar en formato JSON - usar los valores actuales del estado
+      const mensajeJson = {
+        texto1: msg.texto,
+        texto2: msg.texto,
+        velocidad: "x"+velocidad,
+        animacion: "PA_SCROLL_LEFT"
+      };
 
-        client.publish(mqttTopic, JSON.stringify(mensajeJson), { qos: 0 }, (err) => {
-          if (err) console.error(`[MQTT] Error al publicar en ${mqttTopic}:`, err);
-          else console.log(`[MQTT] Mensaje JSON publicado en ${mqttTopic}:`, mensajeJson);
-        });
-      } else {
-        // Publicar en formato texto plano (tradicional)
-        client.publish(mqttTopic, msg.texto, { qos: 0 }, (err) => {
-          if (err) console.error(`[MQTT] Error al publicar en ${mqttTopic}:`, err);
-          else console.log(`[MQTT] Mensaje texto plano publicado en ${mqttTopic}:`, msg.texto);
-        });
-      }
+      client.publish(mqttTopic, JSON.stringify(mensajeJson), { qos: 0 }, (err) => {
+        if (err) console.error(`[MQTT] Error al publicar en ${mqttTopic}:`, err);
+        else console.log(`[MQTT] Mensaje JSON publicado en ${mqttTopic}:`, mensajeJson);
+      });
     } else {
-      console.warn("[MQTT] Cliente no conectado");
+      // Publicar en formato texto plano (tradicional)
+      client.publish(mqttTopic, msg.texto, { qos: 0 }, (err) => {
+        if (err) console.error(`[MQTT] Error al publicar en ${mqttTopic}:`, err);
+        else console.log(`[MQTT] Mensaje texto plano publicado en ${mqttTopic}:`, msg.texto);
+      });
     }
-  };
+  } else {
+    console.warn("[MQTT] Cliente no conectado");
+  }
+};
 
   // Actualiza velocidad y publica el mensaje
   const actualizarVelocidad = (nuevoValor) => {
     setVelocidad(nuevoValor);
     if (mensajeActual) {
-      setTimeout(() => publicarMensaje(mensajeActual), 0);
+      // Crear una copia actualizada del mensaje con la nueva velocidad
+      const mensajeActualizado = { ...mensajeActual };
+      setTimeout(() => publicarMensaje(mensajeActualizado), 0);
     }
   };
 
@@ -295,7 +288,9 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
   const actualizarColor = (nuevoColor) => {
     setColor(nuevoColor);
     if (mensajeActual) {
-      setTimeout(() => publicarMensaje(mensajeActual), 0);
+      // Crear una copia actualizada del mensaje con el nuevo color
+      const mensajeActualizado = { ...mensajeActual };
+      setTimeout(() => publicarMensaje(mensajeActualizado), 0);
     }
   };
 
