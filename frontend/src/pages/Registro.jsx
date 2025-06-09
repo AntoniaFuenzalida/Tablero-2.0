@@ -13,12 +13,13 @@ export default function RegistroVerificado() {
   const [contraseña, setContraseña] = useState("");
   const [confirmarContraseña, setConfirmarContraseña] = useState("");
 
-  const enviarCodigo = async () => {
-    if (!correo.endsWith("@alumnos.utalca.cl")) {
-      alert("Solo se permiten correos @alumnos.utalca.cl");
-      return;
-    }
+const enviarCodigo = async () => {
+  if (!correo.endsWith("@alumnos.utalca.cl")) {
+    alert("Solo se permiten correos @alumnos.utalca.cl");
+    return;
+  }
 
+  try {
     const res = await fetch("http://localhost:3001/api/enviar-codigo", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -26,15 +27,20 @@ export default function RegistroVerificado() {
     });
 
     const data = await res.json();
-    if (res.ok) {
-      alert("Código enviado al correo. Revisa también tu bandeja de spam o correos no deseados.");
-      setCodigoEnviado(true);
+
+    if (!res.ok) {
+      alert(data.error || "Error al enviar código");
+      return; // ⛔ No continuar
     }
 
-    else {
-      alert(data.error || "Error al enviar código");
-    }
-  };
+    // ✅ Solo si todo fue bien
+    alert("Código enviado al correo. Revisa también tu bandeja de spam o correos no deseados.");
+    setCodigoEnviado(true);
+  } catch (error) {
+    alert("Error de conexión con el servidor");
+  }
+};
+
 
   const verificarCodigo = async () => {
     const res = await fetch("http://localhost:3001/api/verificar-codigo", {
