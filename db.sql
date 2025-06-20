@@ -40,6 +40,8 @@ CREATE TABLE IF NOT EXISTS DiaAtencion (
   id INT AUTO_INCREMENT PRIMARY KEY,
   diaSemana VARCHAR(20),
   hora TIME,
+  horaFin TIME,
+  activo TINYINT(1) DEFAULT 0,
   usuario_id INT,
   FOREIGN KEY (usuario_id) REFERENCES Usuario(id)
 );

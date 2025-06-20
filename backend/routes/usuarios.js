@@ -72,24 +72,31 @@ router.put('/cambiar-contrasena', verifyToken, async (req, res) => {
 router.post('/horario',verifyToken, async (req, res) => {
   try {
     const { horarios } = req.body; // Array de objetos con días y horas
-    const usuario_id = req.query.userId || 1; // O desde token si usas autenticación
+    // Usar siempre el ID del usuario del token
+    const usuario_id = req.user.id;
+
+    if (!usuario_id) {
+      return res.status(400).json({ error: 'Usuario no identificado en el token' });
+    }
     
     // Eliminar horarios existentes
-    await db.query('DELETE FROM DiaAtencion WHERE usuario_id = ?', [usuario_id]);
+    const deleteResult = await db.query('DELETE FROM DiaAtencion WHERE usuario_id = ?', [usuario_id]);
     
     // Insertar nuevos horarios
+    let insertedCount = 0;
     for (const horario of horarios) {
       if (horario.activo) {
         await db.query(
           'INSERT INTO DiaAtencion (diaSemana, hora, horaFin, activo, usuario_id) VALUES (?, ?, ?, ?, ?)',
           [horario.diaSemana, horario.hora, horario.horaFin, horario.activo ? 1 : 0, usuario_id]
         );
+        insertedCount++;
       }
     }
     
-    res.json({ success: true });
+    res.json({ success: true, insertedCount });
   } catch (err) {
-    console.error(err);
+    console.error('❌ Error al guardar horarios:', err);
     res.status(500).json({ error: 'Error al guardar horarios' });
   }
 });
@@ -97,13 +104,21 @@ router.post('/horario',verifyToken, async (req, res) => {
 // Obtener horario de atención
 router.get('/horario',verifyToken, async (req, res) => {
   try {
+    // Usar siempre el ID del usuario del token
+    const usuario_id = req.user.id;
+    
+    if (!usuario_id) {
+      return res.status(400).json({ error: 'Usuario no identificado en el token' });
+    }
+    
     const [rows] = await db.query(
       'SELECT diaSemana, hora, horaFin, activo FROM DiaAtencion WHERE usuario_id = ?',
-      [req.query.userId || 1] // Usa un ID por defecto o desde query params
+      [usuario_id]
     );
     
     // Manejar caso de datos vacíos
     if (!rows || rows.length === 0) {
+      console.log('⚠️ No se encontraron horarios para este usuario');
       return res.json([]);
     }
     
