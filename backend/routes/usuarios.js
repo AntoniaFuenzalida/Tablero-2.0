@@ -69,42 +69,47 @@ router.put('/cambiar-contrasena', verifyToken, async (req, res) => {
 });
 
 // Guardar horario de atención
-router.post('/horario', verifyToken, async (req, res) => {
-  const userId = req.user.id;
-  const horarios = req.body.horarios;
-
+router.post('/horario',verifyToken, async (req, res) => {
   try {
-    await db.query('DELETE FROM DiaAtencion WHERE usuario_id = ?', [userId]);
-
-    for (const h of horarios) {
-      if (h.activo) {
+    const { horarios } = req.body; // Array de objetos con días y horas
+    const usuario_id = req.query.userId || 1; // O desde token si usas autenticación
+    
+    // Eliminar horarios existentes
+    await db.query('DELETE FROM DiaAtencion WHERE usuario_id = ?', [usuario_id]);
+    
+    // Insertar nuevos horarios
+    for (const horario of horarios) {
+      if (horario.activo) {
         await db.query(
-          'INSERT INTO DiaAtencion (diaSemana, hora, horaFin, usuario_id) VALUES (?, ?, ?, ?)',
-          [h.dia, h.inicio, h.fin, userId]
+          'INSERT INTO DiaAtencion (diaSemana, hora, horaFin, activo, usuario_id) VALUES (?, ?, ?, ?, ?)',
+          [horario.diaSemana, horario.hora, horario.horaFin, horario.activo ? 1 : 0, usuario_id]
         );
       }
     }
-
-    res.json({ message: 'Horario guardado correctamente' });
+    
+    res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Error al guardar horario' });
+    res.status(500).json({ error: 'Error al guardar horarios' });
   }
 });
 
 // Obtener horario de atención
-router.get('/horario', verifyToken, async (req, res) => {
-  const userId = req.user.id;
-
+router.get('/horario',verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(
-      'SELECT diaSemana, hora, horaFin FROM DiaAtencion WHERE usuario_id = ?',
-      [userId]
+      'SELECT diaSemana, hora, horaFin, activo FROM DiaAtencion WHERE usuario_id = ?',
+      [req.query.userId || 1] // Usa un ID por defecto o desde query params
     );
-
+    
+    // Manejar caso de datos vacíos
+    if (!rows || rows.length === 0) {
+      return res.json([]);
+    }
+    
     res.json(rows);
   } catch (err) {
-    console.error(err);
+    console.error('Error al consultar horarios:', err);
     res.status(500).json({ error: 'Error al obtener horarios' });
   }
 });
