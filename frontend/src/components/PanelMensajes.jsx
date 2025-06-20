@@ -451,19 +451,34 @@ const PanelMensajes = ({ tableroId }) => {
           if (window.finHorarioTimeout) {
             clearTimeout(window.finHorarioTimeout);
           }
-          
-          window.finHorarioTimeout = setTimeout(() => {
+            window.finHorarioTimeout = setTimeout(() => {
+            // Al finalizar el horario automáticamente, restaurar mensaje anterior o usar por defecto
+            if (mensajeAnterior) {
+              setMensajeActual(mensajeAnterior);
+              publicarMensaje(mensajeAnterior);
+              console.log("⏰ Fin automático de horario ejecutado - Restaurado mensaje anterior");
+            } else {
+              // Si no hay mensaje anterior, usar mensaje por defecto "OCUPADO"
+              const mensajePorDefecto = new TableroCadenasTexto('ocupado-temp', tableroId, 'OCUPADO');
+              setMensajeActual(mensajePorDefecto);
+              publicarMensaje(mensajePorDefecto);
+              console.log("⏰ Fin automático de horario ejecutado - Asignado mensaje por defecto: OCUPADO");
+            }
             setModoHorarioActivo(false);
-            console.log("⏰ Fin automático de horario ejecutado");
           }, msFaltantes);
         }
-      }
-      // Si salimos del horario de atención y estaba activo antes
+      }      // Si salimos del horario de atención y estaba activo antes
       else if (!estadoHorario.activo && modoHorarioActivo) {
         if (mensajeAnterior) {
           setMensajeActual(mensajeAnterior);
           publicarMensaje(mensajeAnterior);
           console.log("🔄 Restaurado mensaje anterior");
+        } else {
+          // Si no hay mensaje anterior, usar mensaje por defecto "OCUPADO"
+          const mensajePorDefecto = new TableroCadenasTexto('ocupado-temp', tableroId, 'OCUPADO');
+          setMensajeActual(mensajePorDefecto);
+          publicarMensaje(mensajePorDefecto);
+          console.log("🔄 Asignado mensaje por defecto: OCUPADO");
         }
         setModoHorarioActivo(false);
         
@@ -477,7 +492,7 @@ const PanelMensajes = ({ tableroId }) => {
     // Verificar al iniciar
     verificarYGestionarHorarios();
     
-    // Configurar intervalo cada 60 segundos (1 minuto) para reducir carga
+    // Configurar intervalo para verificar cada 10 segundos
     intervaloId = setInterval(() => {
       verificarYGestionarHorarios();
     }, 10000);
