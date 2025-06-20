@@ -90,13 +90,18 @@ const HorarioAtencion = () => {
         body: JSON.stringify({ horarios: horariosParaEnviar }),
       });
 
-      console.log("📡 Respuesta del guardado:", response.status);
-
-      if (response.ok) {
-        const result = await response.json();
+      console.log("📡 Respuesta del guardado:", response.status);      if (response.ok) {
+        await response.json(); // Recibimos la respuesta pero no la necesitamos usar
         alert("✅ Horarios guardados correctamente");
         setModalAbierto(false);
         cargarHorarios(); // Recargar horarios
+        
+        // Disparar evento personalizado para notificar a otros componentes
+        const horarioActualizadoEvent = new CustomEvent('horarioActualizado', {
+          detail: { horarios: horariosParaEnviar }
+        });
+        window.dispatchEvent(horarioActualizadoEvent);
+        console.log("🔔 Evento horarioActualizado disparado");
       } else {
         const error = await response.json();
         alert(`❌ Error: ${error.error || "No se pudieron guardar los horarios"}`);

@@ -10,10 +10,10 @@ const PanelMensajes = ({ tableroId }) => {
   const [mensajeActual, setMensajeActual] = useState(null);
   const [mensajes, setMensajes] = useState([]);
   const [nuevoMensaje, setNuevoMensaje] = useState("");
-  const [editandoMensaje, setEditandoMensaje] = useState(false);  
+  const [editandoMensaje, setEditandoMensaje] = useState(false);
   const [velocidad, setVelocidad] = useState(100);
   const [color, setColor] = useState({ r: 255, g: 255, b: 255 });
-  const [formatoJson, setFormatoJson] = useState(false); // Controla si se envía en formato JSON o texto plano (false = texto normal)
+  const [formatoJson, setFormatoJson] = useState(true); // Controla si se envía en formato JSON o texto plano
   const [mensajeAnterior, setMensajeAnterior] = useState(null); // Almacena el mensaje previo antes de mostrar el horario
   const [horarios, setHorarios] = useState([]);
   const [modoHorarioActivo, setModoHorarioActivo] = useState(false);
@@ -54,6 +54,7 @@ const PanelMensajes = ({ tableroId }) => {
     const key = `mensajes_${tableroId}`;
     localStorage.setItem(key, JSON.stringify(mensajesArray.map(m => m.toJSON())));
   }, [tableroId]);
+
   const fetchMensajes = useCallback(async () => {
     if (!tableroId) return;
     
@@ -72,7 +73,37 @@ const PanelMensajes = ({ tableroId }) => {
     } catch (error) {
       console.error("Error al obtener los mensajes:", error);
     }
-  }, [tableroId, esTableroManual, getLocalStorageMensajes]);  const enviarMensaje = async (texto) => {
+  }, [tableroId, esTableroManual, getLocalStorageMensajes]);  
+
+  // Publicar mensaje al tablero mediante MQTT
+  const publicarMensaje = useCallback((msg) => {
+    if (client && client.connected) {
+      if (formatoJson) {
+        // Publicar en formato JSON - usar los valores actuales del estado
+        const mensajeJson = {
+          texto1: msg.texto,
+          texto2: msg.texto,
+          velocidad: "x"+velocidad,
+          animacion: "PA_SCROLL_LEFT"
+        };
+
+        client.publish(mqttTopic, JSON.stringify(mensajeJson), { qos: 0 }, (err) => {
+          if (err) console.error(`[MQTT] Error al publicar en ${mqttTopic}:`, err);
+          else console.log(`[MQTT] Mensaje JSON publicado en ${mqttTopic}:`, mensajeJson);
+        });
+      } else {
+        // Publicar en formato texto plano (tradicional)
+        client.publish(mqttTopic, msg.texto, { qos: 0 }, (err) => {
+          if (err) console.error(`[MQTT] Error al publicar en ${mqttTopic}:`, err);
+          else console.log(`[MQTT] Mensaje texto plano publicado en ${mqttTopic}:`, msg.texto);
+        });
+      }
+    } else {
+      console.warn("[MQTT] Cliente no conectado");
+    }
+  }, [client, formatoJson, mqttTopic, velocidad]);
+
+  const enviarMensaje = async (texto) => {
     // Si es un tablero manual, guardar en localStorage
     if (esTableroManual()) {
       const nuevoMensajes = [...mensajes];
@@ -147,6 +178,7 @@ const PanelMensajes = ({ tableroId }) => {
       console.error("Error al enviar el mensaje:", error);
     }
   };
+
   const editarMensaje = async (mensajeId, nuevoTexto) => {
     // Si es un tablero manual, editar en localStorage
     if (esTableroManual()) {
@@ -178,6 +210,7 @@ const PanelMensajes = ({ tableroId }) => {
       console.error("Error al editar el mensaje:", error);
     }
   };
+
   const eliminarMensaje = async (mensajeId) => {
     // Si es un tablero manual, eliminar de localStorage
     if (esTableroManual()) {
@@ -199,7 +232,135 @@ const PanelMensajes = ({ tableroId }) => {
       setMensajes((prev) => prev.filter((msg) => msg.id !== mensajeId));
     } catch (error) {
       console.error("Error al eliminar el mensaje:", error);
-    }  };useEffect(() => {
+    }
+  };
+
+  // Función para cargar los horarios de atención del usuario
+  const cargarHorarios = useCallback(async () => {
+    if (!usuario || !usuario.id) return;
+    
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://localhost:3001/api/horario`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Filtrar solo los horarios activos
+        const horariosActivos = data.filter(h => h.activo);
+        setHorarios(horariosActivos);
+        console.log("✅ Horarios cargados:", horariosActivos);
+      } else {
+        console.error("❌ Error al cargar horarios");
+        setHorarios([]);
+      }
+    } catch (error) {
+      console.error("❌ Error en la solicitud de horarios:", error);
+      setHorarios([]);
+    }
+  }, [usuario]);
+
+  // Función para verificar si estamos dentro de un horario de atención
+  const verificarHorarioActivo = useCallback(() => {
+    if (!horarios.length) return false;
+    
+    const ahora = new Date();
+    const diaSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][ahora.getDay()];
+    const horaActual = ahora.getHours().toString().padStart(2, '0') + ':' + 
+                      ahora.getMinutes().toString().padStart(2, '0');
+    
+    // Verificar si hay algún horario activo para el día actual
+    const horarioHoy = horarios.find(h => h.diaSemana === diaSemana);
+    
+    if (horarioHoy) {
+      const horaInicio = horarioHoy.hora;
+      const horaFin = horarioHoy.horaFin;
+      
+      // Verificar si la hora actual está dentro del rango
+      if (horaActual >= horaInicio && horaActual <= horaFin) {
+        return { activo: true, horario: horarioHoy };
+      }
+    }
+    
+    return { activo: false, horario: null };
+  }, [horarios]);
+
+  // Función para gestionar el mensaje de horario de atención
+  const gestionarMensajeHorario = useCallback(() => {
+    const estadoHorario = verificarHorarioActivo();
+    
+    // Si estamos en horario de atención y no estaba activo antes
+    if (estadoHorario.activo && !modoHorarioActivo) {
+      // Guardar el mensaje actual antes de cambiarlo
+      if (mensajeActual) {
+        setMensajeAnterior(mensajeActual);
+      }
+      
+      // Crear el mensaje de horario de atención
+      const textoHorario = `HORARIO ATENCIÓN ${estadoHorario.horario.hora} - ${estadoHorario.horario.horaFin}`;
+      
+      // Crear un mensaje temporal (no se guarda en la base de datos)
+      const mensajeHorario = new TableroCadenasTexto(
+        'horario-temp', 
+        tableroId, 
+        textoHorario
+      );
+      
+      // Actualizar el mensaje actual y publicarlo
+      setMensajeActual(mensajeHorario);
+      setTimeout(() => publicarMensaje(mensajeHorario), 0);
+      setModoHorarioActivo(true);
+      
+      console.log("🕒 Activado mensaje de horario:", textoHorario);
+    } 
+    // Si salimos del horario de atención y estaba activo antes
+    else if (!estadoHorario.activo && modoHorarioActivo) {
+      // Restaurar el mensaje anterior
+      if (mensajeAnterior) {
+        setMensajeActual(mensajeAnterior);
+        setTimeout(() => publicarMensaje(mensajeAnterior), 0);
+        console.log("🔄 Restaurado mensaje anterior");
+      }
+      setModoHorarioActivo(false);
+    }
+  }, [modoHorarioActivo, mensajeActual, mensajeAnterior, publicarMensaje, tableroId, verificarHorarioActivo]);
+
+  // Actualiza velocidad y publica el mensaje
+  const actualizarVelocidad = (nuevoValor) => {
+    setVelocidad(nuevoValor);
+    if (mensajeActual) {
+      // Crear una copia actualizada del mensaje con la nueva velocidad
+      const mensajeActualizado = { ...mensajeActual };
+      setTimeout(() => publicarMensaje(mensajeActualizado), 0);
+    }
+  };
+
+  // Actualiza color y publica el mensaje
+  const actualizarColor = (nuevoColor) => {
+    setColor(nuevoColor);
+    if (mensajeActual) {
+      // Crear una copia actualizada del mensaje con el nuevo color
+      const mensajeActualizado = { ...mensajeActual };
+      setTimeout(() => publicarMensaje(mensajeActualizado), 0);
+    }
+  };
+
+  const agregarMensaje = () => {
+    if (nuevoMensaje.trim() === "") return;
+    enviarMensaje(nuevoMensaje);
+    setNuevoMensaje("");
+  };
+
+  const seleccionarMensaje = (msg) => {
+    setMensajeActual(msg);
+    publicarMensaje(msg);
+  };
+
+  useEffect(() => {
     if (!tableroId) return;
     
     // Para tableros manuales, cargar desde localStorage inicialmente
@@ -247,300 +408,38 @@ const PanelMensajes = ({ tableroId }) => {
       setMensajes([]);
       setNuevoMensaje("");
       setEditandoMensaje(false);
-        if (mqttClient) {
+      if (mqttClient) {
         mqttClient.unsubscribe(mqttTopic);
         mqttClient.end();
       }
     };
-  }, [mqttTopic, tableroId, esTableroManual, getLocalStorageMensajes]);  // Publicar mensaje al tablero mediante MQTT
-  const publicarMensaje = useCallback((msg) => {
-    if (client && client.connected) {
-      if (formatoJson) {
-        // Publicar en formato JSON - usar los valores actuales del estado
-        const mensajeJson = {
-          texto1: msg.texto,
-          texto2: msg.texto,
-          velocidad: "x"+velocidad,
-          animacion: "PA_SCROLL_LEFT"
-        };
-
-        client.publish(mqttTopic, JSON.stringify(mensajeJson), { qos: 0 }, (err) => {
-          if (err) console.error(`[MQTT] Error al publicar en ${mqttTopic}:`, err);
-          else console.log(`[MQTT] Mensaje JSON publicado en ${mqttTopic}:`, mensajeJson);
-        });
-      } else {
-        // Publicar en formato texto plano (tradicional)
-        client.publish(mqttTopic, msg.texto, { qos: 0 }, (err) => {
-          if (err) console.error(`[MQTT] Error al publicar en ${mqttTopic}:`, err);
-          else console.log(`[MQTT] Mensaje texto plano publicado en ${mqttTopic}:`, msg.texto);
-        });
-      }
-    } else {
-      console.warn("[MQTT] Cliente no conectado");
-    }
-  }, [client, formatoJson, mqttTopic, velocidad]);
-
-  // Actualiza velocidad y publica el mensaje
-  const actualizarVelocidad = (nuevoValor) => {
-    setVelocidad(nuevoValor);
-    if (mensajeActual) {
-      // Crear una copia actualizada del mensaje con la nueva velocidad
-      const mensajeActualizado = { ...mensajeActual };
-      setTimeout(() => publicarMensaje(mensajeActualizado), 0);
-    }
-  };
-
-  // Actualiza color y publica el mensaje
-  const actualizarColor = (nuevoColor) => {
-    setColor(nuevoColor);
-    if (mensajeActual) {
-      // Crear una copia actualizada del mensaje con el nuevo color
-      const mensajeActualizado = { ...mensajeActual };
-      setTimeout(() => publicarMensaje(mensajeActualizado), 0);
-    }
-  };
-
-  const agregarMensaje = () => {
-    if (nuevoMensaje.trim() === "") return;
-    enviarMensaje(nuevoMensaje);
-    setNuevoMensaje("");
-  };
-
-  const seleccionarMensaje = (msg) => {
-    setMensajeActual(msg);
-    publicarMensaje(msg);
-  };
+  }, [mqttTopic, tableroId, esTableroManual, getLocalStorageMensajes, mqttServer]);
 
   useEffect(() => {
     if (tableroId) {
       fetchMensajes();
     }
-  }, [fetchMensajes, tableroId]);  // Función para cargar los horarios de atención del usuario
-  const cargarHorarios = useCallback(async () => {
-    if (!usuario || !usuario.id) return Promise.resolve([]);
-    
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:3001/api/horario`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  }, [fetchMensajes, tableroId]);
 
-      if (response.ok) {
-        const data = await response.json();
-        // Filtrar solo los horarios activos
-        const horariosActivos = data.filter(h => h.activo);
-        setHorarios(horariosActivos);
-        console.log("✅ Horarios cargados:", horariosActivos);
-        return horariosActivos;
-      } else {
-        console.error("❌ Error al cargar horarios");
-        setHorarios([]);
-        return [];
-      }
-    } catch (error) {
-      console.error("❌ Error en la solicitud de horarios:", error);
-      setHorarios([]);
-      return [];
-    }
-  }, [usuario]);// Función para verificar si estamos dentro de un horario de atención
-  const verificarHorarioActivo = useCallback(() => {
-    if (!horarios.length) return { activo: false, horario: null };
-    
-    const ahora = new Date();
-    const diaSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][ahora.getDay()];
-      // Obtenemos horas y minutos actuales con precisión de segundos
-    const horaActual = ahora.getHours();
-    const minutoActual = ahora.getMinutes();
-    const segundoActual = ahora.getSeconds();
-    
-    // Verificar si hay algún horario activo para el día actual
-    const horarioHoy = horarios.find(h => h.diaSemana === diaSemana);
-    
-    if (horarioHoy) {
-      const horaInicio = horarioHoy.hora;
-      const horaFin = horarioHoy.horaFin;
-      
-      // Desglosamos hora inicio para comparaciones precisas
-      const [horaInicioH, horaInicioM] = horaInicio.split(':').map(Number);
-      const [horaFinH, horaFinM] = horaFin.split(':').map(Number);
-      
-      // Calculamos los minutos totales para comparaciones más precisas
-      const minutosActuales = horaActual * 60 + minutoActual;
-      const minutosInicio = horaInicioH * 60 + horaInicioM;
-      const minutosFin = horaFinH * 60 + horaFinM;
-      
-      // Calculamos también cuánto tiempo falta para el inicio o fin
-      const minutosParaInicio = minutosInicio - minutosActuales;
-      const minutosParaFin = minutosFin - minutosActuales;
-      
-      // Verificar si la hora actual está dentro del rango con precisión de minutos
-      if (minutosActuales >= minutosInicio && minutosActuales <= minutosFin) {
-        console.log(`🕒 En horario activo: ${horaInicio} - ${horaFin} (faltan ${minutosParaFin} minutos para terminar)`);
-        return { 
-          activo: true, 
-          horario: horarioHoy,
-          segundosParaFin: minutosParaFin * 60 - segundoActual
-        };
-      } else if (minutosParaInicio > 0 && minutosParaInicio <= 5) {
-        // Estamos a menos de 5 minutos del inicio
-        console.log(`⏰ Próximo horario en ${minutosParaInicio} minutos: ${horaInicio} - ${horaFin}`);
-        return { 
-          activo: false,
-          horario: horarioHoy,
-          segundosParaInicio: minutosParaInicio * 60 - segundoActual
-        };
-      }
-    }
-    
-    return { activo: false, horario: null };
-  }, [horarios]);  // Función para gestionar el mensaje de horario de atención
-  const gestionarMensajeHorario = useCallback(() => {
-    const estadoHorario = verificarHorarioActivo();
-    
-    // Si estamos en horario de atención y no estaba activo antes
-    if (estadoHorario.activo && !modoHorarioActivo) {
-      // Guardar el mensaje actual antes de cambiarlo
-      if (mensajeActual) {
-        setMensajeAnterior(mensajeActual);
-      }
-      
-      // Crear el mensaje de horario de atención
-      const textoHorario = `HORARIO ATENCION ${estadoHorario.horario.hora} - ${estadoHorario.horario.horaFin}`;
-      
-      // Crear un mensaje temporal (no se guarda en la base de datos)
-      const mensajeHorario = new TableroCadenasTexto(
-        'horario-temp', 
-        tableroId, 
-        textoHorario
-      );
-      
-      // Actualizar el mensaje actual y publicarlo
-      setMensajeActual(mensajeHorario);
-      publicarMensaje(mensajeHorario);
-      setModoHorarioActivo(true);
-      
-      console.log("🕒 Activado mensaje de horario:", textoHorario);
-      
-      // Si tenemos datos sobre cuánto tiempo falta para terminar, programamos su finalización exacta
-      if (estadoHorario.segundosParaFin) {
-        const msFaltantes = estadoHorario.segundosParaFin * 1000;
-        console.log(`⏱️ Programando fin de horario en ${msFaltantes/1000} segundos`);
-        
-        // Programar el fin del horario con precisión de milisegundos
-        if (window.finHorarioTimeout) {
-          clearTimeout(window.finHorarioTimeout);
-        }
-        
-        window.finHorarioTimeout = setTimeout(() => {
-          if (modoHorarioActivo && mensajeAnterior) {
-            console.log("⏰ Fin automático de horario programado");
-            setMensajeActual(mensajeAnterior);
-            publicarMensaje(mensajeAnterior);
-            setModoHorarioActivo(false);
-          }
-        }, msFaltantes);
-      }
-    } 
-    // Si salimos del horario de atención y estaba activo antes
-    else if (!estadoHorario.activo && modoHorarioActivo) {
-      // Restaurar el mensaje anterior
-      if (mensajeAnterior) {
-        setMensajeActual(mensajeAnterior);
-        publicarMensaje(mensajeAnterior);
-        console.log("🔄 Restaurado mensaje anterior");
-      }
-      setModoHorarioActivo(false);
-      
-      // Limpiar cualquier timeout pendiente
-      if (window.finHorarioTimeout) {
-        clearTimeout(window.finHorarioTimeout);
-        window.finHorarioTimeout = null;
-      }
-    }
-    // Si estamos cerca del inicio de un horario (menos de 5 minutos)
-    else if (!estadoHorario.activo && estadoHorario.segundosParaInicio) {
-      // Programar el inicio exacto del horario
-      const msFaltantes = estadoHorario.segundosParaInicio * 1000;
-      console.log(`⏱️ Programando inicio de horario en ${msFaltantes/1000} segundos`);
-      
-      if (window.inicioHorarioTimeout) {
-        clearTimeout(window.inicioHorarioTimeout);
-      }
-      
-      window.inicioHorarioTimeout = setTimeout(() => {
-        console.log("⏰ Inicio automático de horario programado");
-        // Volver a verificar horarios para activar el mensaje
-        const nuevoEstado = verificarHorarioActivo();
-        if (nuevoEstado.activo) {
-          gestionarMensajeHorario();
-        }
-      }, msFaltantes);
-    }
-  }, [modoHorarioActivo, mensajeActual, mensajeAnterior, publicarMensaje, tableroId, verificarHorarioActivo]);  // Cargar horarios cuando cambie el usuario y verificar horarios activos inmediatamente
+  // Cargar horarios cuando cambie el usuario
   useEffect(() => {
     if (usuario && usuario.id) {
-      // Cargar horarios y luego verificar si hay alguno activo
-      cargarHorarios().then(() => {
-        // Pequeño retraso para asegurar que los horarios estén cargados en el estado
-        setTimeout(() => {
-          console.log("🔍 Verificando horarios activos después de cargar");
-          gestionarMensajeHorario();
-        }, 500);
-      });
+      cargarHorarios();
     }
-  }, [usuario, cargarHorarios, gestionarMensajeHorario]);
-  // Escuchar eventos de actualización de horarios
+  }, [usuario, cargarHorarios]);
+
+  // Verificar horarios cada minuto
   useEffect(() => {
-    const manejarHorarioActualizado = (event) => {
-      console.log("📢 Evento de horario actualizado recibido", event.detail);
-      // Recargar horarios
-      cargarHorarios().then(() => {
-        // Verificar inmediatamente si hay un horario activo
-        setTimeout(() => {
-          gestionarMensajeHorario();
-        }, 500); // Pequeño retraso para asegurar que los horarios estén cargados
-      });
-    };
-    
-    // Registrar el escuchador de eventos
-    window.addEventListener('horarioActualizado', manejarHorarioActualizado);
-    
-    // Limpiar al desmontar
-    return () => {
-      window.removeEventListener('horarioActualizado', manejarHorarioActualizado);
-    };
-  }, [cargarHorarios, gestionarMensajeHorario]);
-  // Verificar horarios frecuentemente para reducir la latencia
-  useEffect(() => {
-    if (!tableroId) return;
-    
     // Verificar al iniciar
     gestionarMensajeHorario();
     
-    // Calculamos el tiempo hasta el próximo segundo 0
-    const ahora = new Date();
-    const milisegundosHastaProximoSegundoCero = (60 - ahora.getSeconds()) * 1000 - ahora.getMilliseconds();
-    
-    // Configurar un timeout para sincronizar con el cambio de minuto
-    const timeoutId = setTimeout(() => {
-      // Verificar nuevamente en el cambio de minuto
+    // Configurar intervalo para verificar cada minuto
+    const intervalo = setInterval(() => {
       gestionarMensajeHorario();
-      
-      // Después de sincronizar, configuramos un intervalo cada 10 segundos
-      const intervalo = setInterval(() => {
-        gestionarMensajeHorario();
-      }, 10000); // 10 segundos
-      
-      // Limpieza al desmontar
-      return () => clearInterval(intervalo);
-    }, milisegundosHastaProximoSegundoCero);
+    }, 60000); // 60 segundos
     
-    // Limpieza del timeout si se desmonta antes
-    return () => clearTimeout(timeoutId);
-  }, [gestionarMensajeHorario, tableroId]);
+    return () => clearInterval(intervalo);
+  }, [gestionarMensajeHorario]);
 
   if (!tableroId) {
     return (
@@ -549,6 +448,7 @@ const PanelMensajes = ({ tableroId }) => {
       </div>
     );
   }
+
   return (
     <div className="flex flex-col gap-6 p-6">
       {/* Panel de estado y visualización */}
@@ -767,8 +667,9 @@ const PanelMensajes = ({ tableroId }) => {
                         }}></div>
                       </div>
                     </div>
-                  </>               
+                  </>
                 )}
+                
                 <div className="flex items-center gap-2 bg-gray-50 p-1.5 px-3 rounded-full text-xs border border-gray-200">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
