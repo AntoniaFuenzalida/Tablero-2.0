@@ -1,15 +1,15 @@
 const mysql = require('mysql2');
 
 const pool = mysql.createPool({
-  host: '35.184.184.109',
+  host: 'mysql',
   user: 'admin',
-  password: 'Tableroutalca7',
+  password: 'admin',
   port: 3306,
   database: 'tablero',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  timezone: "America/Santiago",
+  timezone: '-03:00', // UTC-3 para Chile (equivalente a America/Santiago)
 });
 
 module.exports = pool.promise();
