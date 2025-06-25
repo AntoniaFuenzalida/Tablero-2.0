@@ -69,42 +69,62 @@ router.put('/cambiar-contrasena', verifyToken, async (req, res) => {
 });
 
 // Guardar horario de atención
-router.post('/horario', verifyToken, async (req, res) => {
-  const userId = req.user.id;
-  const horarios = req.body.horarios;
-
+router.post('/horario',verifyToken, async (req, res) => {
   try {
-    await db.query('DELETE FROM DiaAtencion WHERE usuario_id = ?', [userId]);
+    const { horarios } = req.body; // Array de objetos con días y horas
+    // Usar siempre el ID del usuario del token
+    const usuario_id = req.user.id;
 
-    for (const h of horarios) {
-      if (h.activo) {
+    if (!usuario_id) {
+      return res.status(400).json({ error: 'Usuario no identificado en el token' });
+    }
+    
+    // Eliminar horarios existentes
+    const deleteResult = await db.query('DELETE FROM DiaAtencion WHERE usuario_id = ?', [usuario_id]);
+    
+    // Insertar nuevos horarios
+    let insertedCount = 0;
+    for (const horario of horarios) {
+      if (horario.activo) {
         await db.query(
-          'INSERT INTO DiaAtencion (diaSemana, hora, horaFin, usuario_id) VALUES (?, ?, ?, ?)',
-          [h.dia, h.inicio, h.fin, userId]
+          'INSERT INTO DiaAtencion (diaSemana, hora, horaFin, activo, usuario_id) VALUES (?, ?, ?, ?, ?)',
+          [horario.diaSemana, horario.hora, horario.horaFin, horario.activo ? 1 : 0, usuario_id]
         );
+        insertedCount++;
       }
     }
-
-    res.json({ message: 'Horario guardado correctamente' });
+    
+    res.json({ success: true, insertedCount });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al guardar horario' });
+    console.error('❌ Error al guardar horarios:', err);
+    res.status(500).json({ error: 'Error al guardar horarios' });
   }
 });
 
 // Obtener horario de atención
-router.get('/horario', verifyToken, async (req, res) => {
-  const userId = req.user.id;
-
+router.get('/horario',verifyToken, async (req, res) => {
   try {
+    // Usar siempre el ID del usuario del token
+    const usuario_id = req.user.id;
+    
+    if (!usuario_id) {
+      return res.status(400).json({ error: 'Usuario no identificado en el token' });
+    }
+    
     const [rows] = await db.query(
-      'SELECT diaSemana, hora, horaFin FROM DiaAtencion WHERE usuario_id = ?',
-      [userId]
+      'SELECT diaSemana, hora, horaFin, activo FROM DiaAtencion WHERE usuario_id = ?',
+      [usuario_id]
     );
-
+    
+    // Manejar caso de datos vacíos
+    if (!rows || rows.length === 0) {
+      console.log('⚠️ No se encontraron horarios para este usuario');
+      return res.json([]);
+    }
+    
     res.json(rows);
   } catch (err) {
-    console.error(err);
+    console.error('Error al consultar horarios:', err);
     res.status(500).json({ error: 'Error al obtener horarios' });
   }
 });

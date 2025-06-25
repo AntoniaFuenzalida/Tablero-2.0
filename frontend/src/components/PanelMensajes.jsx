@@ -3,14 +3,20 @@ import { Trash2, CheckCircle, Plus } from "lucide-react";
 import { RgbColorPicker } from "react-colorful";
 import TableroCadenasTexto from "../classes/TableroCadenasTexto";
 import mqtt from "mqtt";
+import { useUser } from "../context/UserContext";
 
-const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActual] = useState(null);
+const PanelMensajes = ({ tableroId }) => {  
+  const { usuario } = useUser();
+  const [mensajeActual, setMensajeActual] = useState(null);
   const [mensajes, setMensajes] = useState([]);
   const [nuevoMensaje, setNuevoMensaje] = useState("");
-  const [editandoMensaje, setEditandoMensaje] = useState(false);
+  const [editandoMensaje, setEditandoMensaje] = useState(false);  
   const [velocidad, setVelocidad] = useState(100);
   const [color, setColor] = useState({ r: 255, g: 255, b: 255 });
-  const [formatoJson, setFormatoJson] = useState(true); // Controla si se envía en formato JSON o texto plano
+  const [formatoJson, setFormatoJson] = useState(false); // Controla si se envía en formato JSON o texto plano (false = texto normal)
+  const [mensajeAnterior, setMensajeAnterior] = useState(null); // Almacena el mensaje previo antes de mostrar el horario
+  const [horarios, setHorarios] = useState([]);
+  const [modoHorarioActivo, setModoHorarioActivo] = useState(false);
 
   const [client, setClient] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState("Desconectado");
@@ -80,13 +86,10 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
         if (formatoJson) {
           // Formato JSON
           const mensajeJson = {
-            text: texto,
-            speed: velocidad,
-            color: {
-              r: color.r,
-              g: color.g,
-              b: color.b,
-            },
+            texto1: texto,
+            texto2: texto,
+            velocidad: velocidad,
+            animacion: "PA_SCROLL_LEFT"
           };
           
           client.publish(mqttTopic, JSON.stringify(mensajeJson), { qos: 0 }, (err) => {
@@ -122,13 +125,10 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
         if (formatoJson) {
           // Formato JSON
           const mensajeJson = {
-            text: texto,
-            speed: velocidad,
-            color: {
-              r: color.r,
-              g: color.g,
-              b: color.b,
-            },
+            texto1: texto,
+            texto2: texto,
+            velocidad: velocidad,
+            animacion: "PA_SCROLL_LEFT"
           };
           
           client.publish(mqttTopic, JSON.stringify(mensajeJson), { qos: 0 }, (err) => {
@@ -252,19 +252,16 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
         mqttClient.end();
       }
     };
-  }, [mqttTopic, tableroId, esTableroManual, getLocalStorageMensajes]);  
-    const publicarMensaje = (msg) => {
+  }, [mqttTopic, tableroId, esTableroManual, getLocalStorageMensajes]);  // Publicar mensaje al tablero mediante MQTT
+  const publicarMensaje = useCallback((msg) => {
     if (client && client.connected) {
       if (formatoJson) {
-        // Publicar en formato JSON
+        // Publicar en formato JSON - usar los valores actuales del estado
         const mensajeJson = {
-          mensaje: msg.texto,
-          velocidad: velocidad,
-          color: {
-            r: color.r,
-            g: color.g,
-            b: color.b,
-          },
+          texto1: msg.texto,
+          texto2: msg.texto,
+          velocidad: "x"+velocidad,
+          animacion: "PA_SCROLL_LEFT"
         };
 
         client.publish(mqttTopic, JSON.stringify(mensajeJson), { qos: 0 }, (err) => {
@@ -281,13 +278,15 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
     } else {
       console.warn("[MQTT] Cliente no conectado");
     }
-  };
+  }, [client, formatoJson, mqttTopic, velocidad]);
 
   // Actualiza velocidad y publica el mensaje
   const actualizarVelocidad = (nuevoValor) => {
     setVelocidad(nuevoValor);
     if (mensajeActual) {
-      setTimeout(() => publicarMensaje(mensajeActual), 0);
+      // Crear una copia actualizada del mensaje con la nueva velocidad
+      const mensajeActualizado = { ...mensajeActual };
+      setTimeout(() => publicarMensaje(mensajeActualizado), 0);
     }
   };
 
@@ -295,7 +294,9 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
   const actualizarColor = (nuevoColor) => {
     setColor(nuevoColor);
     if (mensajeActual) {
-      setTimeout(() => publicarMensaje(mensajeActual), 0);
+      // Crear una copia actualizada del mensaje con el nuevo color
+      const mensajeActualizado = { ...mensajeActual };
+      setTimeout(() => publicarMensaje(mensajeActualizado), 0);
     }
   };
 
@@ -314,7 +315,206 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
     if (tableroId) {
       fetchMensajes();
     }
-  }, [fetchMensajes, tableroId]);
+  }, [fetchMensajes, tableroId]);  // Función para cargar los horarios de atención del usuario
+  const cargarHorarios = useCallback(async () => {
+    const usuarioActual = usuario;
+    if (!usuarioActual || !usuarioActual.id) return Promise.resolve([]);
+    
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://localhost:3001/api/horario`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Filtrar solo los horarios activos
+        const horariosActivos = data.filter(h => h.activo);
+        setHorarios(horariosActivos);
+        console.log("✅ Horarios cargados:", horariosActivos.length);
+        return horariosActivos;
+      } else {
+        console.error("❌ Error al cargar horarios");
+        setHorarios([]);
+        return [];
+      }
+    } catch (error) {
+      console.error("❌ Error en la solicitud de horarios:", error);
+      setHorarios([]);
+      return [];
+    }
+  }, [usuario]); // Incluir usuario completo// Función para verificar si estamos dentro de un horario de atención
+  const verificarHorarioActivo = useCallback(() => {
+    if (!horarios.length) return { activo: false, horario: null };
+    
+    const ahora = new Date();
+    const diaSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][ahora.getDay()];
+    const horaActual = ahora.getHours();
+    const minutoActual = ahora.getMinutes();
+    const segundoActual = ahora.getSeconds();
+    
+    // Verificar si hay algún horario activo para el día actual
+    const horarioHoy = horarios.find(h => h.diaSemana === diaSemana);
+    
+    if (horarioHoy) {
+      const horaInicio = horarioHoy.hora;
+      const horaFin = horarioHoy.horaFin;
+      
+      // Desglosamos hora inicio para comparaciones precisas
+      const [horaInicioH, horaInicioM] = horaInicio.split(':').map(Number);
+      const [horaFinH, horaFinM] = horaFin.split(':').map(Number);
+      
+      // Calculamos los minutos totales para comparaciones más precisas
+      const minutosActuales = horaActual * 60 + minutoActual;
+      const minutosInicio = horaInicioH * 60 + horaInicioM;
+      const minutosFin = horaFinH * 60 + horaFinM;
+      
+      // Calculamos también cuánto tiempo falta para el inicio o fin
+      const minutosParaInicio = minutosInicio - minutosActuales;
+      const minutosParaFin = minutosFin - minutosActuales;
+      
+      // Verificar si la hora actual está dentro del rango con precisión de minutos
+      if (minutosActuales >= minutosInicio && minutosActuales <= minutosFin) {
+        // Solo logear cambios de estado, no en cada verificación
+        return { 
+          activo: true, 
+          horario: horarioHoy,
+          segundosParaFin: minutosParaFin * 60 - segundoActual
+        };
+      } else if (minutosParaInicio > 0 && minutosParaInicio <= 5) {
+        // Estamos a menos de 5 minutos del inicio
+        return { 
+          activo: false,
+          horario: horarioHoy,
+          segundosParaInicio: minutosParaInicio * 60 - segundoActual
+        };
+      }
+    }
+    
+    return { activo: false, horario: null };
+  }, [horarios]);  // (Función gestionarMensajeHorario eliminada para evitar dependencias circulares - su lógica está en el useEffect principal)// Cargar horarios cuando cambie el usuario
+  useEffect(() => {
+    if (usuario && usuario.id) {
+      cargarHorarios().then(() => {
+        console.log("🔍 Horarios cargados para usuario:", usuario.id);
+      });
+    }
+  }, [usuario, cargarHorarios]); 
+  
+  // Escuchar eventos de actualización de horarios
+  useEffect(() => {
+    const manejarHorarioActualizado = () => {
+      console.log("📢 Evento de horario actualizado recibido");
+      if (usuario && usuario.id) {
+        cargarHorarios();
+      }
+    };
+    
+    window.addEventListener('horarioActualizado', manejarHorarioActualizado);
+    
+    return () => {
+      window.removeEventListener('horarioActualizado', manejarHorarioActualizado);
+    };
+  }, [usuario, cargarHorarios]);  // Verificar horarios frecuentemente para reducir la latencia
+  useEffect(() => {
+    if (!tableroId || !horarios.length) return;
+    
+    let intervaloId = null;
+    let timeoutId = null;
+    
+    // Función interna para gestionar horarios sin dependencias circulares
+    const verificarYGestionarHorarios = () => {
+      const estadoHorario = verificarHorarioActivo();
+      
+      // Si estamos en horario de atención y no estaba activo antes
+      if (estadoHorario.activo && !modoHorarioActivo) {
+        if (mensajeActual) {
+          setMensajeAnterior(mensajeActual);
+        }
+        
+        const textoHorario = `HORARIO ATENCION ${estadoHorario.horario.hora} - ${estadoHorario.horario.horaFin}`;
+        const mensajeHorario = new TableroCadenasTexto('horario-temp', tableroId, textoHorario);
+        
+        setMensajeActual(mensajeHorario);
+        publicarMensaje(mensajeHorario);
+        setModoHorarioActivo(true);
+        
+        console.log("🕒 Activado mensaje de horario:", textoHorario);
+        
+        if (estadoHorario.segundosParaFin) {
+          const msFaltantes = estadoHorario.segundosParaFin * 1000;
+          console.log(`⏱️ Programando fin de horario en ${Math.round(msFaltantes/1000)} segundos`);
+          
+          if (window.finHorarioTimeout) {
+            clearTimeout(window.finHorarioTimeout);
+          }
+            window.finHorarioTimeout = setTimeout(() => {
+            // Al finalizar el horario automáticamente, restaurar mensaje anterior o usar por defecto
+            if (mensajeAnterior) {
+              setMensajeActual(mensajeAnterior);
+              publicarMensaje(mensajeAnterior);
+              console.log("⏰ Fin automático de horario ejecutado - Restaurado mensaje anterior");
+            } else {
+              // Si no hay mensaje anterior, usar mensaje por defecto "OCUPADO"
+              const mensajePorDefecto = new TableroCadenasTexto('ocupado-temp', tableroId, 'OCUPADO');
+              setMensajeActual(mensajePorDefecto);
+              publicarMensaje(mensajePorDefecto);
+              console.log("⏰ Fin automático de horario ejecutado - Asignado mensaje por defecto: OCUPADO");
+            }
+            setModoHorarioActivo(false);
+          }, msFaltantes);
+        }
+      }      // Si salimos del horario de atención y estaba activo antes
+      else if (!estadoHorario.activo && modoHorarioActivo) {
+        if (mensajeAnterior) {
+          setMensajeActual(mensajeAnterior);
+          publicarMensaje(mensajeAnterior);
+          console.log("🔄 Restaurado mensaje anterior");
+        } else {
+          // Si no hay mensaje anterior, usar mensaje por defecto "OCUPADO"
+          const mensajePorDefecto = new TableroCadenasTexto('ocupado-temp', tableroId, 'OCUPADO');
+          setMensajeActual(mensajePorDefecto);
+          publicarMensaje(mensajePorDefecto);
+          console.log("🔄 Asignado mensaje por defecto: OCUPADO");
+        }
+        setModoHorarioActivo(false);
+        
+        if (window.finHorarioTimeout) {
+          clearTimeout(window.finHorarioTimeout);
+          window.finHorarioTimeout = null;
+        }
+      }
+    };
+    
+    // Verificar al iniciar
+    verificarYGestionarHorarios();
+    
+    // Configurar intervalo para verificar cada 10 segundos
+    intervaloId = setInterval(() => {
+      verificarYGestionarHorarios();
+    }, 10000);
+    
+    // Limpieza al desmontar
+    return () => {
+      if (intervaloId) {
+        clearInterval(intervaloId);
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      if (window.finHorarioTimeout) {
+        clearTimeout(window.finHorarioTimeout);
+        window.finHorarioTimeout = null;
+      }
+      if (window.inicioHorarioTimeout) {
+        clearTimeout(window.inicioHorarioTimeout);
+        window.inicioHorarioTimeout = null;
+      }
+    };
+  }, [tableroId, horarios.length, modoHorarioActivo, mensajeActual, mensajeAnterior, verificarHorarioActivo, publicarMensaje]);
 
   if (!tableroId) {
     return (
@@ -385,7 +585,8 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
                         </svg>
                         Velocidad
                       </h5>
-                      <div className="flex items-center gap-2">                      <button 
+                      <div className="flex items-center gap-2">                      
+                      <button 
                           onClick={() => actualizarVelocidad(Math.max(1, velocidad - 10))}
                           className="text-xs bg-gray-200 hover:bg-gray-300 h-6 w-6 rounded-full flex items-center justify-center"
                         >
@@ -441,7 +642,8 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
                     </div>
                   </div>
                 </div>
-              ) : (                <div className="p-4">
+              ) : (                
+              <div className="p-4">
                   <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-center">
                     <p className="text-gray-600 text-sm">
                       Modo texto: envía solo el mensaje sin datos adicionales.
@@ -504,7 +706,8 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
             </div>
           </div>
         ) : (
-          <div>            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
+          <div>            
+          <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
               {mensajeActual ? (
                 <p className="text-gray-800 font-medium" style={ 
                   formatoJson ? { color: `rgb(${color.r}, ${color.g}, ${color.b})` } : {}
@@ -515,7 +718,8 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
                 <p className="text-gray-500 italic">No hay mensaje seleccionado</p>
               )}
             </div>
-              {mensajeActual && (              <div className="flex flex-wrap gap-4">
+              {mensajeActual && (              
+              <div className="flex flex-wrap gap-4">
                 {formatoJson && (
                   <>
                     <div className="flex items-center gap-2 bg-gray-50 p-1.5 px-3 rounded-full text-xs border border-gray-200">
@@ -537,8 +741,9 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
                         }}></div>
                       </div>
                     </div>
-                  </>
-                )}                <div className="flex items-center gap-2 bg-gray-50 p-1.5 px-3 rounded-full text-xs border border-gray-200">
+                  </>               
+                )}
+                <div className="flex items-center gap-2 bg-gray-50 p-1.5 px-3 rounded-full text-xs border border-gray-200">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
                   </svg>
@@ -642,7 +847,9 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
               </button>
             </div>
             
-            {/* Panel de configuración para nuevo mensaje */}            <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 shadow-sm">              <div className="flex items-center justify-between mb-3">
+            {/* Panel de configuración para nuevo mensaje */}           
+            <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 shadow-sm">              
+              <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-medium text-gray-700 flex items-center gap-1">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
@@ -710,7 +917,8 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
                     </div>
                   </div>
                 </div>
-              ) : (                <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-center mb-3">
+              ) : (                
+              <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-center mb-3">
                   <p className="text-gray-600 text-sm">
                     Modo texto: envía solo el mensaje sin datos adicionales.
                   </p>
@@ -739,8 +947,6 @@ const PanelMensajes = ({ tableroId }) => {  const [mensajeActual, setMensajeActu
                   </div>
                 </div>
               </div>
-              
-              {/* Eliminado el selector de color avanzado condicional */}
             </div>
           </div>
         </div>
