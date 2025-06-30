@@ -38,8 +38,12 @@ services:
       - ./data:/mosquitto/data
       - ./log:/mosquitto/log
     restart: unless-stopped
+
   backend:
-    build: ./backend
+    build: 
+      context: ./backend
+      args:
+        - BACKEND_EXTERNAL_PORT=${BACKEND_EXTERNAL_PORT}
     container_name: backend_container
     restart: always
     ports:
@@ -55,13 +59,20 @@ services:
       DB_PORT: ${DB_PORT}
 
   frontend:
-    build: ./frontend
+    build: 
+      context: ./frontend
+      args:
+        - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+        - REACT_APP_API_URL=${REACT_APP_API_URL}
     container_name: frontend_container
     restart: always
     ports:
       - "${FRONTEND_EXTERNAL_PORT}:80"
     depends_on:
       - backend
+    environment:
+      - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
 
 volumes:
   mysql_data:

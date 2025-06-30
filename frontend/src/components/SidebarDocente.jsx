@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useUser } from "../context/UserContext";
+import { API_BASE_URL } from "../config/api";
+
 
 const SidebarDocente = ({ onDisponibilidadCambiada, onTableroSeleccionado }) => {
   const { usuario, fetchUserData } = useUser();
@@ -23,7 +25,7 @@ const SidebarDocente = ({ onDisponibilidadCambiada, onTableroSeleccionado }) => 
       setLoading(true);
       try {
         const response = await fetch(
-          `http://localhost:3001/api/tableros?usuario_id=${usuario_id}`
+          `${API_BASE_URL}/api/tableros?usuario_id=${usuario_id}`
         );
         if (!response.ok)
           throw new Error(`Error al obtener tableros: ${response.status}`);
@@ -69,7 +71,7 @@ const SidebarDocente = ({ onDisponibilidadCambiada, onTableroSeleccionado }) => 
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3001/api/update", {
+      const res = await fetch(`${API_BASE_URL}/api/update`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

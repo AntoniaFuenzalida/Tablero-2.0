@@ -1,6 +1,14 @@
 # Etapa 1: Compilar la aplicación
 FROM node:20 AS build
 
+# MOVER LOS ARGs AQUÍ, ANTES DEL BUILD
+ARG REACT_APP_BACKEND_URL
+ARG REACT_APP_API_URL
+
+# Convertirlos en ENV durante el build
+ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+
 WORKDIR /app
 
 # Set npm configuration for better reliability
@@ -24,9 +32,7 @@ FROM nginx:alpine
 COPY --from=build /app/build /usr/share/nginx/html
 
 # (Opcional) Config personalizado de Nginx si lo necesitas
-# COPY nginx.conf /etc/nginx/nginx.conf
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
 
 EXPOSE 80
 
