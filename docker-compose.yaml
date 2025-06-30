@@ -6,12 +6,12 @@ services:
     container_name: mysql_container
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: admin
-      MYSQL_DATABASE: tablero
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: admin
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
-      - "3306:3306"
+      - "${MYSQL_EXTERNAL_PORT}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./db.sql:/docker-entrypoint-initdb.d/db.sql
@@ -21,14 +21,14 @@ services:
     container_name: adminer_container
     restart: always
     ports:
-      - "8080:8080"
+      - "${ADMINER_EXTERNAL_PORT}:8080"
 
   mosquitto:
     image: eclipse-mosquitto
     container_name: mosquitto
     ports:
-      - "1883:1883"
-      - "9001:9001"
+      - "${MOSQUITTO_MQTT_PORT}:1883"
+      - "${MOSQUITTO_WS_PORT}:9001"
     volumes:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
       - ./data:/mosquitto/data
@@ -39,22 +39,22 @@ services:
     container_name: backend_container
     restart: always
     ports:
-      - "3001:3001"
+      - "${BACKEND_EXTERNAL_PORT}:3001"
     depends_on:
       - mysql
     environment:
-      DB_HOST: mysql
-      DB_USER: admin
-      DB_PASSWORD: admin
-      DB_NAME: tablero
-      DB_PORT: 3306
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT}
 
   frontend:
     build: ./frontend
     container_name: frontend_container
     restart: always
     ports:
-      - "80:80"
+      - "${FRONTEND_EXTERNAL_PORT}:80"
     depends_on:
       - backend
 
