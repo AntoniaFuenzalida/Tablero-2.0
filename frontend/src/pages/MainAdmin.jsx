@@ -4,6 +4,7 @@ import PanelGestionDocentes from "../components/PanelGestionDocentes";
 import PanelGestionDispositivos from "../components/PanelGestionDispositivos";
 import { useNavigate } from "react-router-dom";
 import DocenteService from "../services/DocenteService"; // importa tu servicio
+import { API_BASE_URL } from "../config/api";
 
 const MainAdmin = () => {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ const MainAdmin = () => {
     const token = localStorage.getItem("token");
 
     try {
-      await fetch("http://localhost:3001/api/logout", {
+      await fetch(`${API_BASE_URL}/api/logout`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

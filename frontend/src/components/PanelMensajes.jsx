@@ -4,6 +4,7 @@ import { RgbColorPicker } from "react-colorful";
 import TableroCadenasTexto from "../classes/TableroCadenasTexto";
 import mqtt from "mqtt";
 import { useUser } from "../context/UserContext";
+import { API_BASE_URL } from "../config/api";
 
 const PanelMensajes = ({ tableroId }) => {  
   const { usuario } = useUser();
@@ -66,7 +67,7 @@ const PanelMensajes = ({ tableroId }) => {
     
     // Para tableros normales, usar la API
     try {
-      const response = await fetch(`http://localhost:3001/api/mensajes/${tableroId}`);
+      const response = await fetch(`${API_BASE_URL}/api/mensajes/${tableroId}`);
       const data = await response.json();
       setMensajes(data.map((msg) => TableroCadenasTexto.fromJSON(msg)));
     } catch (error) {
@@ -110,7 +111,7 @@ const PanelMensajes = ({ tableroId }) => {
     
     // Para tableros normales, usar la API
     try {
-      const response = await fetch(`http://localhost:3001/api/mensajes/${tableroId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/mensajes/${tableroId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -163,7 +164,7 @@ const PanelMensajes = ({ tableroId }) => {
     // Para tableros normales, usar la API
     try {
       const response = await fetch(
-        `http://localhost:3001/api/mensajes/${tableroId}/${mensajeId}`,
+        `${API_BASE_URL}/api/mensajes/${tableroId}/${mensajeId}`,
         {
           method: "PUT",
           headers: {
@@ -190,7 +191,7 @@ const PanelMensajes = ({ tableroId }) => {
     // Para tableros normales, usar la API
     try {
       const response = await fetch(
-        `http://localhost:3001/api/mensajes/${tableroId}/${mensajeId}`,
+        `${API_BASE_URL}/api/mensajes/${tableroId}/${mensajeId}`,
         {
           method: "DELETE",
         }
@@ -322,7 +323,7 @@ const PanelMensajes = ({ tableroId }) => {
     
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:3001/api/horario`, {
+      const response = await fetch(`${API_BASE_URL}/api/horario`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,

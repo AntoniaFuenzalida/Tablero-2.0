@@ -5,6 +5,7 @@ import HorarioAtencion from "../components/HorarioAtencion";
 import ConfiguracionCuenta from "../components/ConfiguracionCuenta";
 import logoUtalca from "../assets/logo-utalca.png";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../config/api";
 
 const MainDocente = () => {
   const [pestanaActiva, setPestanaActiva] = useState("mensajes");
@@ -19,7 +20,7 @@ const MainDocente = () => {
     const token = localStorage.getItem("token");
 
     try {
-      await fetch("http://localhost:3001/api/logout", {
+      await fetch(`${API_BASE_URL}/api/logout`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -45,7 +46,7 @@ const MainDocente = () => {
     if (!token) return;
 
     try {
-      const res = await fetch("http://localhost:3001/api/me", {
+      const res = await fetch(`${API_BASE_URL}/api/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -67,7 +68,7 @@ const MainDocente = () => {
     if (!token) return;
 
     try {
-      const res = await fetch("http://localhost:3001/api/notificaciones", {
+      const res = await fetch(`${API_BASE_URL}/api/notificaciones`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -89,7 +90,7 @@ const MainDocente = () => {
     if (!token) return;
 
     try {
-      const res = await fetch("http://localhost:3001/api/notificaciones/historial", {
+      const res = await fetch(`${API_BASE_URL}/api/notificaciones/historial`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -182,7 +183,7 @@ const MainDocente = () => {
                           const token = localStorage.getItem("token");
                           try {
                             const res = await fetch(
-                              `http://localhost:3001/api/notificaciones/${item.id}/leida`,
+                              `${API_BASE_URL}/api/notificaciones/${item.id}/leida`,
                               {
                                 method: "PUT",
                                 headers: {

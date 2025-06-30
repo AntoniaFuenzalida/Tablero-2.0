@@ -1,3 +1,5 @@
+-- Crear la base de datos si no existe
+CREATE DATABASE IF NOT EXISTS tablero;
 USE tablero;
 
 -- Tabla Usuario

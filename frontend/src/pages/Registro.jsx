@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import logoUtalca from "../assets/logo-utalca.png";
+import { API_BASE_URL } from "../config/api";
 
 export default function RegistroVerificado() {
   const [correo, setCorreo] = useState("");
@@ -20,7 +21,7 @@ const enviarCodigo = async () => {
   }
 
   try {
-    const res = await fetch("http://localhost:3001/api/enviar-codigo", {
+    const res = await fetch(`${API_BASE_URL}/api/enviar-codigo`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ correo }),
@@ -43,7 +44,7 @@ const enviarCodigo = async () => {
 
 
   const verificarCodigo = async () => {
-    const res = await fetch("http://localhost:3001/api/verificar-codigo", {
+    const res = await fetch(`${API_BASE_URL}/api/verificar-codigo`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ correo, codigoIngresado: codigo }),
@@ -67,7 +68,7 @@ const enviarCodigo = async () => {
     }
 
     try {
-      const response = await fetch("http://localhost:3001/api/register", {
+      const response = await fetch(`${API_BASE_URL}/api/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nombre, correo, contraseña, rol }),

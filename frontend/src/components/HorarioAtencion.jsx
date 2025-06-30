@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useUser } from "../context/UserContext";
+import { API_BASE_URL } from "../config/api";
 
 const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 
@@ -27,7 +28,7 @@ const HorarioAtencion = () => {
       const token = localStorage.getItem("token");
       console.log("🔑 Token obtenido:", token ? "Existe" : "No existe");
       
-      const response = await fetch(`http://localhost:3001/api/horario`, {
+      const response = await fetch(`${API_BASE_URL}/api/horario`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -81,7 +82,7 @@ const HorarioAtencion = () => {
       }));
 
 
-      const response = await fetch(`http://localhost:3001/api/horario`, {
+      const response = await fetch(`${API_BASE_URL}/api/horario`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

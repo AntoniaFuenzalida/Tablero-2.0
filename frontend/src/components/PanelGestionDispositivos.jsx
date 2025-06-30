@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../config/api";
 
 const PanelGestionDispositivos = ({ usuarioId }) => {
   const [dispositivos, setDispositivos] = useState([]);
@@ -11,7 +12,7 @@ const PanelGestionDispositivos = ({ usuarioId }) => {
   const obtenerDispositivos = async () => {
     setCargando(true);
     try {
-      const response = await fetch("http://localhost:3001/api/tableros", { method: "GET" });
+      const response = await fetch(`${API_BASE_URL}/api/tableros`, { method: "GET" });
       if (!response.ok) throw new Error("Error al obtener los tableros");
       const data = await response.json();
       const dispositivosFormateados = data.map(tablero => ({
@@ -35,7 +36,7 @@ const PanelGestionDispositivos = ({ usuarioId }) => {
   const obtenerDocentes = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:3001/api/users", {
+      const response = await fetch(`${API_BASE_URL}/api/users`, {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -55,7 +56,7 @@ const PanelGestionDispositivos = ({ usuarioId }) => {
 
   const agregarDispositivo = async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/tableros", {
+      const response = await fetch(`${API_BASE_URL}/api/tableros`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ usuario_id: nuevoDispositivo.docente_id || null }),
@@ -73,7 +74,7 @@ const PanelGestionDispositivos = ({ usuarioId }) => {
   const eliminarDispositivo = async (id) => {
     if (window.confirm("¿Estás seguro de eliminar este tablero?")) {
       try {
-        const response = await fetch(`http://localhost:3001/api/tableros/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/tableros/${id}`, {
           method: "DELETE",
         });
         if (!response.ok) throw new Error("Error al eliminar el tablero");
@@ -87,7 +88,7 @@ const PanelGestionDispositivos = ({ usuarioId }) => {
 
   const actualizarAsignacion = async (id, docente_id) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/tableros/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/tableros/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ usuario_id: docente_id || null }),
