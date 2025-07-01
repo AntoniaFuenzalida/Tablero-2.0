@@ -52,14 +52,14 @@ router.put('/cambiar-contrasena', verifyToken, async (req, res) => {
   const userId = req.user.id;
 
   try {
-    const [rows] = await db.query('SELECT contraseña FROM Usuario WHERE id = ?', [userId]);
+    const [rows] = await db.query('SELECT contrasena FROM Usuario WHERE id = ?', [userId]);
     if (rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-    const coincide = await bcrypt.compare(actual, rows[0].contraseña);
+    const coincide = await bcrypt.compare(actual, rows[0].contrasena);
     if (!coincide) return res.status(400).json({ error: 'Contraseña actual incorrecta' });
 
     const hashedNueva = await bcrypt.hash(nueva, 10);
-    await db.query('UPDATE Usuario SET contraseña = ? WHERE id = ?', [hashedNueva, userId]);
+    await db.query('UPDATE Usuario SET contrasena = ? WHERE id = ?', [hashedNueva, userId]);
 
     res.json({ message: 'Contraseña actualizada correctamente' });
   } catch (err) {

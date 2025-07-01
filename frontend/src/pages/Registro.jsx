@@ -11,37 +11,35 @@ export default function RegistroVerificado() {
 
   const [nombre, setNombre] = useState("");
   const [rol, setRol] = useState("docente");
-  const [contraseña, setContraseña] = useState("");
-  const [confirmarContraseña, setConfirmarContraseña] = useState("");
+  const [contrasena, setContrasena] = useState("");
+  const [confirmarContrasena, setConfirmarContrasena] = useState("");
 
-const enviarCodigo = async () => {
-  if (!correo.endsWith("@alumnos.utalca.cl")) {
-    alert("Solo se permiten correos @alumnos.utalca.cl");
-    return;
-  }
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/enviar-codigo`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ correo }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.error || "Error al enviar código");
-      return; // ⛔ No continuar
+  const enviarCodigo = async () => {
+    if (!correo.endsWith("@alumnos.utalca.cl")) {
+      alert("Solo se permiten correos @alumnos.utalca.cl");
+      return;
     }
 
-    // ✅ Solo si todo fue bien
-    alert("Código enviado al correo. Revisa también tu bandeja de spam o correos no deseados.");
-    setCodigoEnviado(true);
-  } catch (error) {
-    alert("Error de conexión con el servidor");
-  }
-};
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/enviar-codigo`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ correo }),
+      });
 
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Error al enviar código");
+        return;
+      }
+
+      alert("Código enviado al correo. Revisa también tu bandeja de spam o correos no deseados.");
+      setCodigoEnviado(true);
+    } catch (error) {
+      alert("Error de conexión con el servidor");
+    }
+  };
 
   const verificarCodigo = async () => {
     const res = await fetch(`${API_BASE_URL}/api/verificar-codigo`, {
@@ -62,7 +60,7 @@ const enviarCodigo = async () => {
   const handleRegistro = async (e) => {
     e.preventDefault();
 
-    if (contraseña !== confirmarContraseña) {
+    if (contrasena !== confirmarContrasena) {
       alert("Las contraseñas no coinciden");
       return;
     }
@@ -71,13 +69,13 @@ const enviarCodigo = async () => {
       const response = await fetch(`${API_BASE_URL}/api/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre, correo, contraseña, rol }),
+        body: JSON.stringify({ nombre, correo, contrasena, rol }),
       });
 
       const data = await response.json();
       if (response.ok) {
         alert("Usuario registrado exitosamente");
-        // Redireccionar si se desea
+        // Puedes redirigir aquí si lo deseas
       } else {
         alert(data.error || "Error al registrar");
       }
@@ -147,8 +145,8 @@ const enviarCodigo = async () => {
                 <label className="block text-sm text-gray-700 mb-1">Contraseña</label>
                 <input
                   type="password"
-                  value={contraseña}
-                  onChange={(e) => setContraseña(e.target.value)}
+                  value={contrasena}
+                  onChange={(e) => setContrasena(e.target.value)}
                   className="w-full border px-3 py-2 rounded text-sm"
                   required
                 />
@@ -158,8 +156,8 @@ const enviarCodigo = async () => {
                 <label className="block text-sm text-gray-700 mb-1">Confirmar contraseña</label>
                 <input
                   type="password"
-                  value={confirmarContraseña}
-                  onChange={(e) => setConfirmarContraseña(e.target.value)}
+                  value={confirmarContrasena}
+                  onChange={(e) => setConfirmarContrasena(e.target.value)}
                   className="w-full border px-3 py-2 rounded text-sm"
                   required
                 />

@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS Usuario (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(100),
   correo VARCHAR(100),
-  contraseña VARCHAR(100),
+  contrasena VARCHAR(100),
   departamento VARCHAR(100),
   oficina VARCHAR(100),
   rol VARCHAR(20),

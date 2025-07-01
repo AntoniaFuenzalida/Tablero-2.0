@@ -6,7 +6,7 @@ import { API_BASE_URL } from "../config/api";
 
 const Login = () => {
   const [correo, setCorreo] = useState("");
-  const [contraseña, setContraseña] = useState("");
+  const [contrasena, setContrasena] = useState(""); // ← sin ñ
   const navigate = useNavigate();
   const { fetchUserData } = useUser(); 
 
@@ -17,7 +17,7 @@ const Login = () => {
       const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ correo, contraseña }),
+        body: JSON.stringify({ correo, contrasena }), // ← sin ñ
       });
 
       const data = await response.json();
@@ -25,19 +25,13 @@ const Login = () => {
       if (response.ok) {
         alert("Login exitoso");
 
-        // Guardamos el token
         localStorage.setItem("token", data.token);
-
-        // Obtenemos los datos del usuario desde el contexto
         await fetchUserData();
-      
         localStorage.setItem("login-event", Date.now());
 
-        // Decodificamos el token para obtener el rol
         const tokenPayload = JSON.parse(atob(data.token.split(".")[1]));
         localStorage.setItem("rol", tokenPayload.rol);
 
-        // Navegamos según el rol
         if (tokenPayload.rol === "admin") {
           navigate("/admin");
         } else {
@@ -77,8 +71,8 @@ const Login = () => {
             <label className="block text-sm text-gray-700 mb-1">Contraseña</label>
             <input
               type="password"
-              value={contraseña}
-              onChange={(e) => setContraseña(e.target.value)}
+              value={contrasena} // ← sin ñ
+              onChange={(e) => setContrasena(e.target.value)} // ← sin ñ
               className="w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="••••••••"
               required

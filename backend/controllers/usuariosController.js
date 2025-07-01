@@ -15,22 +15,22 @@ const getUsers = async (req, res) => {
 // Registrar nuevo usuario
 const registerUser = async (req, res) => {
   try {
-    const { nombre, correo, contraseña, rol } = req.body;
+    const { nombre, correo, contrasena, rol } = req.body;
 
-    if (!nombre || !correo || !contraseña)
+    if (!nombre || !correo || !contrasena)
       return res.status(400).json({ error: 'Todos los campos son obligatorios' });
 
     // Validar dominio del correo
     if (!correo.endsWith("@alumnos.utalca.cl")) {
-      return res.status(400).json({ error: "El correo debe ser @alumnos.utalca.cl" });
+      return res.status(400).json({ error: "Solo se permiten correos institucionales @alumnos.utalca.cl" });
     }
+
 
     const [existing] = await db.query('SELECT id FROM Usuario WHERE correo = ?', [correo]);
     if (existing.length > 0) {
-      // Verifica si el usuario está incompleto (sin contraseña o sin rol)
       const [user] = await db.query('SELECT * FROM Usuario WHERE correo = ?', [correo]);
       const u = user[0];
-      if (!u.contraseña || !u.nombre || !u.rol) {
+      if (!u.contrasena || !u.nombre || !u.rol) {
         return res.status(400).json({
           error: "Este correo ya fue iniciado pero el registro no se completó. Contacta soporte o usa otro correo.",
         });
@@ -39,16 +39,14 @@ const registerUser = async (req, res) => {
       return res.status(409).json({ error: 'El usuario ya existe' });
     }
 
-
-    const hashedPassword = await bcrypt.hash(contraseña, 10);
+    const hashedPassword = await bcrypt.hash(contrasena, 10);
 
     await db.query(
-      'INSERT INTO Usuario (nombre, correo, contraseña, rol) VALUES (?, ?, ?, ?)',
+      'INSERT INTO Usuario (nombre, correo, contrasena, rol) VALUES (?, ?, ?, ?)',
       [nombre, correo, hashedPassword, rol]
     );
 
     console.log("✅ Registrando usuario:", { nombre, correo, rol });
-
 
     res.status(201).json({ message: 'Usuario registrado exitosamente' });
   } catch (err) {
@@ -57,11 +55,11 @@ const registerUser = async (req, res) => {
   }
 };
 
-// Iniciar sesión (y marcar como disponible)
+// Iniciar sesión
 const loginUser = async (req, res) => {
-  const { correo, contraseña } = req.body;
+  const { correo, contrasena } = req.body;
 
-  if (!correo || !contraseña)
+  if (!correo || !contrasena)
     return res.status(400).json({ error: 'Email y contraseña son requeridos' });
 
   try {
@@ -70,7 +68,7 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ error: 'Usuario no encontrado' });
 
     const user = users[0];
-    const isMatch = await bcrypt.compare(contraseña, user.contraseña);
+    const isMatch = await bcrypt.compare(contrasena, user.contrasena);
 
     if (!isMatch)
       return res.status(401).json({ error: 'Contraseña incorrecta' });
@@ -90,7 +88,7 @@ const loginUser = async (req, res) => {
   }
 };
 
-// Cerrar sesión (opcional) => marcar como no disponible
+// Cerrar sesión
 const logoutUser = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -105,7 +103,7 @@ const logoutUser = async (req, res) => {
 // Actualizar datos del usuario
 const updateUser = async (req, res) => {
   const userId = req.user.id;
-  const { nombre, correo, departamento, oficina, contraseña, disponible } = req.body;
+  const { nombre, correo, departamento, oficina, contrasena, disponible } = req.body;
 
   try {
     const updates = [];
@@ -131,9 +129,9 @@ const updateUser = async (req, res) => {
       params.push(oficina);
     }
 
-    if (contraseña) {
-      const hashed = await bcrypt.hash(contraseña, 10);
-      updates.push("contraseña = ?");
+    if (contrasena) {
+      const hashed = await bcrypt.hash(contrasena, 10);
+      updates.push("contrasena = ?");
       params.push(hashed);
     }
 
@@ -171,5 +169,5 @@ module.exports = {
   getUsers,
   loginUser,
   updateUser,
-  logoutUser // nuevo
+  logoutUser
 };
