@@ -22,7 +22,7 @@ const PanelMensajes = ({ tableroId }) => {
   const [client, setClient] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState("Desconectado");
   const mqttTopic = `${tableroId}`;
-  const mqttServer = "ws://35.184.184.109:9001"; // Cambia esto a tu servidor MQTT
+  const mqttServer = "ws://127.17.22.242:9001"; // Cambia esto a tu servidor MQTT
 
   // Función para verificar si el tablero actual es manual
   const esTableroManual = useCallback(() => {
